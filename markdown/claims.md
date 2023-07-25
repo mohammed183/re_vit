@@ -153,6 +153,45 @@ We can attempt to verify the quantitative claims for the **ImageNet** and **Imag
 ::: {.cell .markdown}
 ## Claim 3: The hybrid Vision Transformer can perform better than both baseline and Vision Transformer after fine tuning it to different classification task
 
+The authors propose a hybrid vision transformer that combines a ResNet backbone with a vision transformer, and claim that this model outperforms both the pure vision transformer and the pure CNN models. They argue that the ResNet layer provides a better feature representation for the transformer, enabling it to learn more information from the images.
+
+To support their claim, the authors conduct various experiments using different models pretrained on the JFT-300M dataset and then fine-tuned on classification tasks on different datasets. They also vary the number of epochs as a hyperparameter and test the sensitivity of their results to this factor. The tables below show the results they obtained for each type of model.
+
+The ResNet model results:
+
+| Model       | Epochs | ImageNet | ImageNet ReaL | CIFAR-10 | CIFAR-100 | Pets  | Flowers |
+| :---------: | :----: | :------: | :-----------: | :------: | :-------: | :---: | :-----: |
+| ResNet50x1  | 7      | 77.54    | 84.56         | 97.67    | 86.07     | 91.11 | 94.26   |
+| ResNet50x2  | 7      | 82.12    | 87.94         | 98.29    | 89.20     | 93.43 | 97.02   |
+| ResNet101x1 | 7      | 80.67    | 87.07         | 98.48    | 89.17     | 94.08 | 95.95   |
+| ResNet152x1 | 7      | 81.88    | 87.96         | 98.82    | 90.22     | 94.17 | 96.94   |
+| ResNet152x2 | 7      | 84.97    | 89.69         | 99.06    | 92.05     | 95.37 | 98.62   |
+| ResNet152x2 | 14     | 85.56    | 89.89         | 99.24    | 91.92     | 95.75 | 98.75   |
+| ResNet200x3 | 14     | 87.22    | 90.15         | 99.34    | 93.53     | 96.32 | 99.04   |
+
+The vision transformer model results:
+
+| Model     | Epochs | ImageNet | ImageNet ReaL | CIFAR-10 | CIFAR-100 | Pets  | Flowers |
+| :-------: | :----: | :------: | :-----------: | :------: | :-------: | :---: | :-----: |
+| ViT-B/32  | 7      | 80.73    | 86.27         | 98.61    | 90.49     | 93.40 | 99.27   |
+| ViT-B/16  | 7      | 84.15    | 88.85         | 99.00    | 91.87     | 95.80 | 99.56   |
+| ViT-L/32  | 7      | 84.37    | 88.28         | 99.19    | 92.52     | 95.83 | 99.45   |
+| ViT-L/16  | 7      | 86.30    | 89.43         | 99.38    | 93.46     | 96.81 | 99.66   |
+| ViT-L/16  | 14     | 87.12    | 89.99         | 99.38    | 94.04     | 97.11 | 99.56   |
+| ViT-H/14  | 14     | 88.08    | 90.36         | 99.50    | 94.71     | 97.11 | 99.71   |
+
+The hybrid model results:
+
+| Model          | Epochs | ImageNet | ImageNet ReaL | CIFAR-10 | CIFAR-100 | Pets  | Flowers |
+| :------------: | :----: | :------: | :-----------: | :------: | :-------: | :---: | :-----: |
+| R50x1+ViT-B/32 | 7      | 87.90    | 89.15         | 99.01    | 92.24     | 95.75 | 99.46   |
+| R50x1+ViT-B/16 | 7      | 85.58    | 89.65         | 99.14    | 92.63     | 96.65 | 99.40   |
+| R50x1+ViT-L/32 | 7      | 85.68    | 89.04         | 99.24    | 92.93     | 96.97 | 99.43   |
+| R50x1+ViT-L/16 | 7      | 86.60    | 89.72         | 99.18    | 93.64     | 97.03 | 99.40   |
+| R50x1+ViT-L/16 | 14     | 87.12    | 89.76         | 99.31    | 93.89     | 97.36 | 99.11   |
+
+To evaluate the qualitative version of this claim, we will use the pretrained models on the ImageNet-21k datasets that are available online and fine-tune them on different classification tasks. Then, we will compare the results of each type of model: pure vision transformer, pure CNN, and hybrid vision transformer. However, we cannot verify the quantitative results of this claim, as the authors did not share their training data or their pretrained model.
+
 ***
 :::
 
@@ -165,9 +204,26 @@ We can attempt to verify the quantitative claims for the **ImageNet** and **Imag
 ::: {.cell .markdown}
 # Experiments
 
-In this section, we will attempt to verify the qualitative and quantitative aspects of each claim. We will indicate which claims cannot be verified due to the lack of the material published by the authors. We will mainly use pretrained models published to verify these claims. Below is a table with the available models.
+In this section, we will attempt to verify the qualitative and quantitative aspects of each claim. We will indicate which claims cannot be verified due to the lack of the material published by the authors. We will mainly use pretrained models published to verify these claims. Below is a table with all the models mentioned in the paper and which versions of it are publicly available.
 
-//////////////Table of available models/////////////////////
+| Model          | Pretrained ImageNet | pretrained ImageNet-21 | Pretrained JFT |
+| :------------: | :-----------------: | :--------------------: | :------------: |
+| ResNet50x1     | Yes                 | Yes                    | No             |
+| ResNet50x2     | No                  | No                     | No             |
+| ResNet101x1    | Yes                 | Yes                    | No             |
+| ResNet152x1    | No                  | No                     | No             |
+| ResNet152x2    | Yes                 | Yes                    | No             |
+| ResNet152x4    | Yes                 | Yes                    | No             |
+| ResNet200x3    | No                  | No                     | No             |
+| ViT-B/32       | Yes (SAM)           | Yes                    | No             |
+| ViT-B/16       | Yes (SAM)           | Yes                    | No             |
+| ViT-L/32       | Yes (SAM)           | Yes                    | No             |
+| ViT-L/16       | Yes (SAM)           | Yes                    | No             |
+| ViT-H/14       | No                  | Yes                    | No             |
+| R50x1+ViT-B/32 | No                  | No (but R26 available) | No             |
+| R50x1+ViT-B/16 | No                  | Yes                    | No             |
+| R50x1+ViT-L/32 | No                  | Yes                    | No             |
+| R50x1+ViT-L/16 | No                  | Yes                    | No             |
 
 ***
 :::
