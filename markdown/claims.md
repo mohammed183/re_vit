@@ -9,12 +9,14 @@ The paper is available on [arXiv](https://arxiv.org/abs/2010.11929). In creating
 ::: {.cell .markdown} 
 # Goals
 
-The main purpose of this notebook is to:
+The objective of this notebook is to show you how to:
 
-- develop the skills to critically analyze specific claims, both qualitative and quantitative, that are made in the research paper
-- discover how to use pretrained models available to verify claims that need a lot of computational resources
-- learn to identify the specific experiments they would need to run to validate each claim
-- learn to identify the data, code, and hyperparameters that are necessary to run each experiment, and to make reasonable choices when these are not provided
+- Critically analyze the qualitative and quantitative claims in the research paper
+- Specify the experiments that are required to verify each claim
+- Identify the data, code, and hyperparameters that are necessary to run each experiment
+- Use pretrained models to validate claims that need high computational resources
+- Determine the feasibility of verifying different types of claims
+- Design new experiments to validate the qualitative claims when some models or datasets are unavailable
 :::
 
 ::: {.cell .markdown}
@@ -70,6 +72,10 @@ The paper assesses the performance of the **ResNet**, **ViT** and **hybrid** mod
 | ViT-Huge  | 32     | 1280          | 5120     | 16    | 632M   |
 
 
+We want to **evaluate** the **claims** made by the **vision transformer paper**, both **qualitatively and quantitatively**. However, we face some **difficulties** in doing so. First, some of the **pretrained models** that the authors used are **not publicly available**. Second, we do not have enough **computational resources** to train the models from scratch. Third, some of the **datasets** that the authors used for pretraining are **private and inaccessible**. Therefore, we cannot **reproduce all the results** of the paper.
+
+**How do you think we can deal with the previous problems?**
+
 ***
 :::
 
@@ -78,22 +84,79 @@ The paper assesses the performance of the **ResNet**, **ViT** and **hybrid** mod
 
 This claim suggests that the vision transformer can leverage more knowledge from large datasets than CNN models during pretraining and transfer this knowledge to the fine tuning task. This implies that the vision transformer can achieve higher or comparable accuracies to the state of the art models on different classification tasks.
 
-The authors back up their claim by pretraining three variants of the vision transformer and comparing their results as shown in the table below. However, the pretraining is done on the JFT dataset, which is a private dataset only accessible to Google. Moreover, the models released by the authors do not include the models pretrained on the JFT dataset. (BiT-L is a ResNet152x4 model)
+The authors support their claim by pretraining three versions of the vision transformer and evaluating their performance on various benchmarks, as shown in the table below. However, they use the **JFT-300M** dataset for pretraining, which is a private dataset owned by Google and *not available* to the public. Also, the authors do not share the models pretrained on the **JFT-300M** dataset. The table below highlights in green the models that can be reproduced with the public data. *(BiT-L is a ResNet152x4 model)*
 
-| Model           | ImageNet | ImageNet ReaL | CIFAR-10 | CIFAR-100 | Oxford-IIIT Pets | Oxford Flowers-102 | VTAB (19 tasks) |
-| :-------------: | :------: | :-----------: | :------: | :-------: | :-------------:  | :----------------: | :-------------: |
-| ViT-H/14 (JFT)  | 88.55    | 90.72         | 99.50    | 94.55     | 97.56            | 99.68              | 77.63           |
-| ViT-L/16 (JFT)  | 87.76    | 90.54         | 99.42    | 93.90     | 97.32            | 99.74              | 76.28           |
-| ViT-L/16 (I21k) | 85.30    | 88.62         | 99.15    | 93.25     | 94.67            | 99.61              | 72.72           |
-| BiT-L (JFT)     | 87.54    | 90.54         | 99.37    | 93.51     | 96.62            | 99.63              | 76.29           |
-| Noisy Student   | 88.4     | 90.55         | -        | -         | -                | -                  | -               |
+<table style="width: 100%;">
+	<tr>
+		<th style="text-align: center;">Model</th>
+		<th style="text-align: center;">ImageNet</th>
+		<th style="text-align: center;">ImageNet ReaL</th>
+		<th style="text-align: center;">CIFAR-10</th>
+		<th style="text-align: center;">CIFAR-100</th>
+		<th style="text-align: center;">Oxford-IIIT Pets</th>
+		<th style="text-align: center;">Oxford Flowers-102</th>
+		<th style="text-align: center;">VTAB (19 tasks)</th>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ViT-H/14 (JFT)</td>
+		<td style="text-align: center;">88.55</td>
+		<td style="text-align: center;">90.72</td>
+		<td style="text-align: center;">99.50</td>
+		<td style="text-align: center;">94.55</td>
+		<td style="text-align: center;">97.56</td>
+		<td style="text-align: center;">99.68</td>
+		<td style="text-align: center;">77.63</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ViT-L/16 (JFT)</td>
+		<td style="text-align: center;">87.76</td>
+		<td style="text-align: center;">90.54</td>
+		<td style="text-align: center;">99.42</td>
+		<td style="text-align: center;">93.90</td>
+		<td style="text-align: center;">97.32</td>
+		<td style="text-align: center;">99.74</td>
+		<td style="text-align: center;">76.28</td>
+	</tr>
+	<tr style="background-color: lightgreen;">
+		<td style="text-align: center;">ViT-L/16 (I21k)</td>
+		<td style="text-align: center;">85.30</td>
+		<td style="text-align: center;">88.62</td>
+		<td style="text-align: center;">99.15</td>
+		<td style="text-align: center;">93.25</td>
+		<td style="text-align: center;">94.67</td>
+		<td style="text-align: center;">99.61</td>
+		<td style="text-align: center;">72.72</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">BiT-L (JFT)</td>
+		<td style="text-align: center;">87.54</td>
+		<td style="text-align: center;">90.54</td>
+		<td style="text-align: center;">99.37</td>
+		<td style="text-align: center;">93.51</td>
+		<td style="text-align: center;">96.62</td>
+		<td style="text-align: center;">99.63</td>
+		<td style="text-align: center;">76.29</td>
+	</tr>
+	<tr style=“white-space: nowrap;”>
+		<td style="text-align: center;">Noisy Student</td>
+		<td style="text-align: center;">88.4</td>
+		<td style="text-align: center;">90.55</td>
+		<td style="text-align: center;"> - </td>
+		<td style="text-align: center;"> - </td>
+		<td style="text-align: center;"> - </td>
+		<td style="text-align: center;"> - </td>
+		<td style="text-align: center;"> - </td>
+	</tr>
+</table>
 
 The following figure shows the breakdown of the VTAB tasks:
 ![](assets/claim1.png)
+*<small>The models used are not available to the public and cannot be reproduced, as they are trained on the JFT-300M dataset, which is a private dataset owned by Google.</small>*
 
-To test the qualitative aspect of this claim, we will use the pretrained models on the **ImageNet-21k** dataset that are publicly available. We will compare these models with the baseline model that is also pretrained on the same dataset and then fine tuned on the classification tasks as described in the paper.
 
-However, the only quantitative aspect of the claim that we can verify is the one related to the ViT-L/16 (I21k) model, since the other models and the training data are not publicly available. Therefore, we cannot reproduce all the quantitative results of this experiment.
+We want to validate this claim by fine-tuning the pretrained models on different classification tasks and measuring their test accuracy. However, we have a problem: we do not have access to the pretrained models or the **JFT-300M** dataset, which is a private dataset that the authors used for pretraining. 
+
+**How can we solve this problem and verify their claim?**
 
 ***
 :::
@@ -101,49 +164,199 @@ However, the only quantitative aspect of the claim that we can verify is the one
 ::: {.cell .markdown}
 ## Claim 2: The performance of the Vision Transformer on the classification task after fine tuning improves with the increase of the pretraining dataset size
 
-This claim suggests that the performance of the vision transformer is influenced by the size of the dataset it was pretrained on. By pretraining on larger datasets, the model can perform better on the tasks it is finetuned for. This implies that the vision transformer has a better capacity to reuse the information learned previously on new datasets.
+The authors claim that their Vision Transformer models can learn more effectively from larger datasets than conventional CNNs, which enhances their performance on downstream tasks. This means that the vision transformer can transfer the knowledge learned from previous datasets to new ones more effectively than the ResNet models.
 
-To support their claim, the authors pretrained both the ResNet models and the vision transformer on different sized datasets, which are **ImageNet**, **ImageNet-21k** and **JFT-300M**. The authors then fine tuned the models for classification of ImageNet dataset. The following figure illustrates the performance of the models pretrained on different datasets after fine tuning them.
+To demonstrate their claim, the authors compared the ResNet models and the vision transformer models that were pretrained on three different datasets: **ImageNet**, **ImageNet-21k** and **JFT-300M**. They then fine-tuned the models on the ImageNet dataset for classification. The figure below shows how the pretraining dataset size affects the test accuracy of the models.
 
 ![](assets/claim2.png)
+*<small>The models pretrained on ImageNet and ImageNet-21k are available, but the models pretrained on the JFT-300M dataset were not published</small>*
 
-We will test the qualitative claim by fine tuning the pretrained models to classify images in the ImageNet dataset as the authors did and examine how the size of each pretraining dataset influences the final test accuracy. However, we cannot verify the results of the **JFT-300M** pretrained models as they are not publicly available.
+To evaluate the performance of the vision transformer model, the author fine-tuned it on various datasets and presented the results in the tables below. The pretrained models that are marked in green are publicly available.
 
-The author further extend this experiment by fine tuning the vision transformer model on several other datasets.
+Model pretrained on the **ImageNet** dataset:
 
-Model pretrained on the ImageNet dataset:
+<table style=“white-space: nowrap; width=100%”>
+	<tr>
+		<th style="text-align: center;">Dataset</th>
+		<th style="background-color: lightgreen; text-align: center;">ViT-B/16</th>
+		<th style="background-color: lightgreen; text-align: center;">ViT-B/32</th>
+		<th style="background-color: lightgreen; text-align: center;">ViT-L/16</th>
+		<th style="background-color: lightgreen; text-align: center;">ViT-L/32</th>
+		<th style="text-align: center;">ViT-H/14</th>
+	</tr>
+	<tr>
+		<td style="text-align: center;">CIFAR-10</td>
+		<td style="text-align: center;">98.13</td>
+		<td style="text-align: center;">97.77</td>
+		<td style="text-align: center;">97.86</td>
+		<td style="text-align: center;">97.94</td>
+		<td style="text-align: center;"> - </td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">CIFAR-100</td>
+		<td style="text-align: center;">87.13</td>
+		<td style="text-align: center;">86.31</td>
+		<td style="text-align: center;">86.35</td>
+		<td style="text-align: center;">87.07</td>
+		<td style="text-align: center;"> - </td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ImageNet</td>
+		<td style="text-align: center;">77.91</td>
+		<td style="text-align: center;">73.38</td>
+		<td style="text-align: center;">76.53</td>
+		<td style="text-align: center;">71.16</td>
+		<td style="text-align: center;"> - </td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ImageNet ReaL</td>
+		<td style="text-align: center;">83.57</td>
+		<td style="text-align: center;">79.56</td>
+		<td style="text-align: center;">82.19</td>
+		<td style="text-align: center;">77.83</td>
+		<td style="text-align: center;"> - </td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">Oxford Flowers-102</td>
+		<td style="text-align: center;">89.49</td>
+		<td style="text-align: center;">85.43</td>
+		<td style="text-align: center;">89.66</td>
+		<td style="text-align: center;">86.36</td>
+		<td style="text-align: center;"> - </td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">Oxford-IIIT-Pets</td>
+		<td style="text-align: center;">93.81</td>
+		<td style="text-align: center;">92.04</td>
+		<td style="text-align: center;">93.64</td>
+		<td style="text-align: center;">91.35</td>
+		<td style="text-align: center;"> - </td>
+	</tr>
+</table>
 
-| Dataset            | ViT-B/16 | ViT-B/32 | ViT-L/16 | ViT-L/32 | ViT-H/14 |
-| :----------------: | :------: | :------: | :------: | :------: | :------: |
-| CIFAR-10           | 98.13    | 97.77    | 97.86    | 97.94    | -        |
-| CIFAR-100          | 87.13    | 86.31    | 86.35    | 87.07    | -        |
-| ImageNet           | 77.91    | 73.38    | 76.53    | 71.16    | -        |
-| ImageNet ReaL      | 83.57    | 79.56    | 82.19    | 77.83    | -        |
-| Oxford Flowers-102 | 89.49    | 85.43    | 89.66    | 86.36    | -        |
-| Oxford-IIIT-Pets   | 93.81    | 92.04    | 93.64    | 91.35    | -        |
+Model pretrained on the **ImageNet-21k** dataset:
 
-Model pretrained on the ImageNet-21k dataset:
+<table style=“white-space: nowrap; width=100%”>
+	<tr>
+		<th style="text-align: center;">Dataset</th>
+		<th style="background-color: lightgreen; text-align: center;">ViT-B/16</th>
+		<th style="background-color: lightgreen; text-align: center;">ViT-B/32</th>
+		<th style="background-color: lightgreen; text-align: center;">ViT-L/16</th>
+		<th style="background-color: lightgreen; text-align: center;">ViT-L/32</th>
+		<th style="background-color: lightgreen; text-align: center;">ViT-H/14</th>
+	</tr>
+	<tr>
+		<td style="text-align: center;">CIFAR-10</td>
+		<td style="text-align: center;">98.95</td>
+		<td style="text-align: center;">98.79</td>
+		<td style="text-align: center;">99.16</td>
+		<td style="text-align: center;">99.13</td>
+		<td style="text-align: center;">99.27</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">CIFAR-100</td>
+		<td style="text-align: center;">91.67</td>
+		<td style="text-align: center;">91.97</td>
+		<td style="text-align: center;">93.44</td>
+		<td style="text-align: center;">93.04</td>
+		<td style="text-align: center;">93.82</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ImageNet</td>
+		<td style="text-align: center;">83.97</td>
+		<td style="text-align: center;">81.28</td>
+		<td style="text-align: center;">85.15</td>
+		<td style="text-align: center;">80.99</td>
+		<td style="text-align: center;">85.13</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ImageNet ReaL</td>
+		<td style="text-align: center;">88.35</td>
+		<td style="text-align: center;">86.63</td>
+		<td style="text-align: center;">88.40</td>
+		<td style="text-align: center;">85.63</td>
+		<td style="text-align: center;">88.70</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">Oxford Flowers-102</td>
+		<td style="text-align: center;">99.38</td>
+		<td style="text-align: center;">99.11</td>
+		<td style="text-align: center;">99.61</td>
+		<td style="text-align: center;">99.19</td>
+		<td style="text-align: center;">99.51</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">Oxford-IIIT-Pets</td>
+		<td style="text-align: center;">94.43</td>
+		<td style="text-align: center;">93.02</td>
+		<td style="text-align: center;">94.73</td>
+		<td style="text-align: center;">93.09</td>
+		<td style="text-align: center;">94.82</td>
+	</tr>
+</table>
 
-| Dataset            | ViT-B/16 | ViT-B/32 | ViT-L/16 | ViT-L/32 | ViT-H/14 |
-| :----------------: | :------: | :------: | :------: | :------: | :------: |
-| CIFAR-10           | 98.95    | 98.79    | 99.16    | 99.13    | 99.27    |
-| CIFAR-100          | 91.67    | 91.97    | 93.44    | 93.04    | 93.82    |
-| ImageNet           | 83.97    | 81.28    | 85.15    | 80.99    | 85.13    |
-| ImageNet ReaL      | 88.35    | 86.63    | 88.40    | 85.65    | 88.70    |
-| Oxford Flowers-102 | 99.38    | 99.11    | 99.61    | 99.19    | 99.51    |
-| Oxford-IIIT-Pets   | 94.43    | 93.02    | 94.73    | 93.09    | 94.82    |
+Model pretrained on the **JFT-300M** dataset:
 
-Model pretrained on the JFT-300M dataset:
+<table style=“white-space: nowrap; width=100%”>
+	<tr>
+		<th style="text-align: center;">Dataset</th>
+		<th style="text-align: center;">ViT-B/16</th>
+		<th style="text-align: center;">ViT-B/32</th>
+		<th style="text-align: center;">ViT-L/16</th>
+		<th style="text-align: center;">ViT-L/32</th>
+		<th style="text-align: center;">ViT-H/14</th>
+	</tr>
+	<tr>
+		<td style="text-align: center;">CIFAR-10</td>
+		<td style="text-align: center;">99.00</td>
+		<td style="text-align: center;">98.61</td>
+		<td style="text-align: center;">99.38</td>
+		<td style="text-align: center;">99.19</td>
+		<td style="text-align: center;">99.50</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">CIFAR-100</td>
+		<td style="text-align: center;">91.87</td>
+		<td style="text-align: center;">90.49</td>
+		<td style="text-align: center;">94.04</td>
+		<td style="text-align: center;">92.52</td>
+		<td style="text-align: center;">94.55</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ImageNet</td>
+		<td style="text-align: center;">84.15</td>
+		<td style="text-align: center;">80.73</td>
+		<td style="text-align: center;">87.12</td>
+		<td style="text-align: center;">84.37</td>
+		<td style="text-align: center;">88.04</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ImageNet ReaL</td>
+		<td style="text-align: center;">88.85</td>
+		<td style="text-align: center;">86.27</td>
+		<td style="text-align: center;">89.99</td>
+		<td style="text-align: center;">88.28</td>
+		<td style="text-align: center;">90.33</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">Oxford Flowers-102</td>
+		<td style="text-align: center;">99.56</td>
+		<td style="text-align: center;">99.27</td>
+		<td style="text-align: center;">99.56</td>
+		<td style="text-align: center;">99.45</td>
+		<td style="text-align: center;">99.68</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">Oxford-IIIT-Pets</td>
+		<td style="text-align: center;">95.80</td>
+		<td style="text-align: center;">93.40</td>
+		<td style="text-align: center;">97.11</td>
+		<td style="text-align: center;">95.83</td>
+		<td style="text-align: center;">97.56</td>
+	</tr>
+</table>
 
-| Dataset            | ViT-B/16 | ViT-B/32 | ViT-L/16 | ViT-L/32 | ViT-H/14 |
-| :----------------: | :------: | :------: | :------: | :------: | :------: |
-| CIFAR-10           | 99.00    | 98.61    | 99.38    | 99.19    | 99.50    |
-| CIFAR-100          | 91.87    | 90.49    | 94.04    | 92.52    | 94.55    |
-| ImageNet           | 84.15    | 80.73    | 87.12    | 84.37    | 88.04    |
-| ImageNet ReaL      | 88.85    | 86.27    | 89.99    | 88.28    | 90.33    |
-| Oxford Flowers-102 | 99.56    | 99.27    | 99.56    | 99.45    | 99.68    |
-| Oxford-IIIT-Pets   | 95.80    | 93.40    | 97.11    | 95.83    | 97.56    |
-
+We want to test the qualitative claim by fine tuning the pretrained models to classify images in the ImageNet dataset as the authors did and examine how the size of each pretraining dataset influences the final test accuracy. However, we cannot verify the results of the **JFT-300M** pretrained models as they are not publicly available.
 
 We can attempt to verify the quantitative claims for the **ImageNet** and **ImageNet-21k** models, but we cannot reproduce the experiment results for the **JFT-300M** dataset as the models and dataset are not publicly available.
 
@@ -155,42 +368,236 @@ We can attempt to verify the quantitative claims for the **ImageNet** and **Imag
 
 The authors propose a hybrid vision transformer that combines a ResNet backbone with a vision transformer, and claim that this model outperforms both the pure vision transformer and the pure CNN models. They argue that the ResNet layer provides a better feature representation for the transformer, enabling it to learn more information from the images.
 
-To support their claim, the authors conduct various experiments using different models pretrained on the JFT-300M dataset and then fine-tuned on classification tasks on different datasets. They also vary the number of epochs as a hyperparameter and test the sensitivity of their results to this factor. The tables below show the results they obtained for each type of model.
+To support their claim, the authors conduct various experiments using different models pretrained on the **JFT-300M** dataset and then fine-tuned on classification tasks on different datasets. They also vary the number of epochs as a hyperparameter and test the sensitivity of their results to this factor. The tables below show the results they obtained for each type of model.
 
-The ResNet model results:
+The **ResNet models** results:
 
-| Model       | Epochs | ImageNet | ImageNet ReaL | CIFAR-10 | CIFAR-100 | Pets  | Flowers |
-| :---------: | :----: | :------: | :-----------: | :------: | :-------: | :---: | :-----: |
-| ResNet50x1  | 7      | 77.54    | 84.56         | 97.67    | 86.07     | 91.11 | 94.26   |
-| ResNet50x2  | 7      | 82.12    | 87.94         | 98.29    | 89.20     | 93.43 | 97.02   |
-| ResNet101x1 | 7      | 80.67    | 87.07         | 98.48    | 89.17     | 94.08 | 95.95   |
-| ResNet152x1 | 7      | 81.88    | 87.96         | 98.82    | 90.22     | 94.17 | 96.94   |
-| ResNet152x2 | 7      | 84.97    | 89.69         | 99.06    | 92.05     | 95.37 | 98.62   |
-| ResNet152x2 | 14     | 85.56    | 89.89         | 99.24    | 91.92     | 95.75 | 98.75   |
-| ResNet200x3 | 14     | 87.22    | 90.15         | 99.34    | 93.53     | 96.32 | 99.04   |
+<table style=“white-space: nowrap; width=100%”>
+	<tr>
+		<th style="text-align: center;">Model</th>
+		<th style="text-align: center;">Epochs</th>
+		<th style="text-align: center;">ImageNet</th>
+		<th style="text-align: center;">ImageNet ReaL</th>
+		<th style="text-align: center;">CIFAR-10</th>
+		<th style="text-align: center;">CIFAR-100</th>
+		<th style="text-align: center;">Pets</th>
+		<th style="text-align: center;">Flowers</th>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ResNet50x1</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">77.54</td>
+		<td style="text-align: center;">84.56</td>
+		<td style="text-align: center;">97.67</td>
+		<td style="text-align: center;">86.07</td>
+		<td style="text-align: center;">91.11</td>
+		<td style="text-align: center;">94.26</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ResNet50x2</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">82.12</td>
+		<td style="text-align: center;">87.94</td>
+		<td style="text-align: center;">98.29</td>
+		<td style="text-align: center;">89.20</td>
+		<td style="text-align: center;">93.43</td>
+		<td style="text-align: center;">97.02</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ResNet101x1</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">80.67</td>
+		<td style="text-align: center;">87.07</td>
+		<td style="text-align: center;">98.48</td>
+		<td style="text-align: center;">89.17</td>
+		<td style="text-align: center;">94.08</td>
+		<td style="text-align: center;">95.95</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ResNet152x1</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">81.88</td>
+		<td style="text-align: center;">87.96</td>
+		<td style="text-align: center;">98.82</td>
+		<td style="text-align: center;">90.22</td>
+		<td style="text-align: center;">94.17</td>
+		<td style="text-align: center;">96.94</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ResNet152x2</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">84.97</td>
+		<td style="text-align: center;">89.69</td>
+		<td style="text-align: center;">99.06</td>
+		<td style="text-align: center;">92.05</td>
+		<td style="text-align: center;">95.37</td>
+		<td style="text-align: center;">98.62</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ResNet152x2</td>
+		<td style="text-align: center;">14</td>
+		<td style="text-align: center;">85.56</td>
+		<td style="text-align: center;">89.89</td>
+		<td style="text-align: center;">99.24</td>
+		<td style="text-align: center;">91.92</td>
+		<td style="text-align: center;">95.75</td>
+		<td style="text-align: center;">98.75</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ResNet200x3</td>
+		<td style="text-align: center;">14</td>
+		<td style="text-align: center;">87.22</td>
+		<td style="text-align: center;">90.15</td>
+		<td style="text-align: center;">99.34</td>
+		<td style="text-align: center;">93.53</td>
+		<td style="text-align: center;">96.32</td>
+		<td style="text-align: center;">99.04</td>
+	</tr>
+</table>
 
-The vision transformer model results:
+The **vision transformer models** results:
 
-| Model     | Epochs | ImageNet | ImageNet ReaL | CIFAR-10 | CIFAR-100 | Pets  | Flowers |
-| :-------: | :----: | :------: | :-----------: | :------: | :-------: | :---: | :-----: |
-| ViT-B/32  | 7      | 80.73    | 86.27         | 98.61    | 90.49     | 93.40 | 99.27   |
-| ViT-B/16  | 7      | 84.15    | 88.85         | 99.00    | 91.87     | 95.80 | 99.56   |
-| ViT-L/32  | 7      | 84.37    | 88.28         | 99.19    | 92.52     | 95.83 | 99.45   |
-| ViT-L/16  | 7      | 86.30    | 89.43         | 99.38    | 93.46     | 96.81 | 99.66   |
-| ViT-L/16  | 14     | 87.12    | 89.99         | 99.38    | 94.04     | 97.11 | 99.56   |
-| ViT-H/14  | 14     | 88.08    | 90.36         | 99.50    | 94.71     | 97.11 | 99.71   |
+<table style=“white-space: nowrap; width=100%”>
+	<tr>
+		<th style="text-align: center;">Model</th>
+		<th style="text-align: center;">Epochs</th>
+		<th style="text-align: center;">ImageNet</th>
+		<th style="text-align: center;">ImageNet ReaL</th>
+		<th style="text-align: center;">CIFAR-10</th>
+		<th style="text-align: center;">CIFAR-100</th>
+		<th style="text-align: center;">Pets</th>
+		<th style="text-align: center;">Flowers</th>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ViT-B/32</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">80.73</td>
+		<td style="text-align: center;">86.27</td>
+		<td style="text-align: center;">98.61</td>
+		<td style="text-align: center;">90.49</td>
+		<td style="text-align: center;">93.40</td>
+		<td style="text-align: center;">99.27</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ViT-B/16</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">84.15</td>
+		<td style="text-align: center;">88.85</td>
+		<td style="text-align: center;">99.00</td>
+		<td style="text-align: center;">91.87</td>
+		<td style="text-align: center;">95.80</td>
+		<td style="text-align: center;">99.56</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ViT-L/32</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">84.37</td>
+		<td style="text-align: center;">88.28</td>
+		<td style="text-align: center;">99.19</td>
+		<td style="text-align: center;">92.52</td>
+		<td style="text-align: center;">95.83</td>
+		<td style="text-align: center;">99.45</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ViT-L/16</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">86.30</td>
+		<td style="text-align: center;">89.43</td>
+		<td style="text-align: center;">99.38</td>
+		<td style="text-align: center;">93.46</td>
+		<td style="text-align: center;">96.81</td>
+		<td style="text-align: center;">99.66</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ViT-L/16</td>
+		<td style="text-align: center;">14</td>
+		<td style="text-align: center;">87.12</td>
+		<td style="text-align: center;">89.99</td>
+		<td style="text-align: center;">99.38</td>
+		<td style="text-align: center;">94.04</td>
+		<td style="text-align: center;">97.11</td>
+		<td style="text-align: center;">99.56</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ViT-H/14</td>
+		<td style="text-align: center;">14</td>
+		<td style="text-align: center;">88.08</td>
+		<td style="text-align: center;">90.36</td>
+		<td style="text-align: center;">99.50</td>
+		<td style="text-align: center;">94.71</td>
+		<td style="text-align: center;">97.11</td>
+		<td style="text-align: center;">99.71</td>
+	</tr>
+</table>
 
-The hybrid model results:
+The **hybrid models** results:
 
-| Model          | Epochs | ImageNet | ImageNet ReaL | CIFAR-10 | CIFAR-100 | Pets  | Flowers |
-| :------------: | :----: | :------: | :-----------: | :------: | :-------: | :---: | :-----: |
-| R50x1+ViT-B/32 | 7      | 87.90    | 89.15         | 99.01    | 92.24     | 95.75 | 99.46   |
-| R50x1+ViT-B/16 | 7      | 85.58    | 89.65         | 99.14    | 92.63     | 96.65 | 99.40   |
-| R50x1+ViT-L/32 | 7      | 85.68    | 89.04         | 99.24    | 92.93     | 96.97 | 99.43   |
-| R50x1+ViT-L/16 | 7      | 86.60    | 89.72         | 99.18    | 93.64     | 97.03 | 99.40   |
-| R50x1+ViT-L/16 | 14     | 87.12    | 89.76         | 99.31    | 93.89     | 97.36 | 99.11   |
+<table style=“white-space: nowrap; width=100%”>
+	<tr>
+		<th style="text-align: center;">Model</th>
+		<th style="text-align: center;">Epochs</th>
+		<th style="text-align: center;">ImageNet</th>
+		<th style="text-align: center;">ImageNet ReaL</th>
+		<th style="text-align: center;">CIFAR-10</th>
+		<th style="text-align: center;">CIFAR-100</th>
+		<th style="text-align: center;">Pets</th>
+		<th style="text-align: center;">Flowers</th>
+	</tr>
+	<tr>
+		<td style="text-align: center;">R50x1+ViT-B/32</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">87.90</td>
+		<td style="text-align: center;">89.15</td>
+		<td style="text-align: center;">99.01</td>
+		<td style="text-align: center;">92.24</td>
+		<td style="text-align: center;">95.75</td>
+		<td style="text-align: center;">99.46</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">R50x1+ViT-B/16</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">85.58</td>
+		<td style="text-align: center;">89.65</td>
+		<td style="text-align: center;">99.14</td>
+		<td style="text-align: center;">92.63</td>
+		<td style="text-align: center;">96.65</td>
+		<td style="text-align: center;">99.40</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">R50x1+ViT-L/32</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">85.68</td>
+		<td style="text-align: center;">89.04</td>
+		<td style="text-align: center;">99.24</td>
+		<td style="text-align: center;">92.93</td>
+		<td style="text-align: center;">96.97</td>
+		<td style="text-align: center;">99.43</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">R50x1+ViT-L/16</td>
+		<td style="text-align: center;">7</td>
+		<td style="text-align: center;">86.60</td>
+		<td style="text-align: center;">89.72</td>
+		<td style="text-align: center;">99.18</td>
+		<td style="text-align: center;">93.64</td>
+		<td style="text-align: center;">97.03</td>
+		<td style="text-align: center;">99.40</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">R50x1+ViT-L/16</td>
+		<td style="text-align: center;">14</td>
+		<td style="text-align: center;">87.12</td>
+		<td style="text-align: center;">89.76</td>
+		<td style="text-align: center;">99.31</td>
+		<td style="text-align: center;">93.89</td>
+		<td style="text-align: center;">97.36</td>
+		<td style="text-align: center;">99.11</td>
+	</tr>
+</table>
 
-To evaluate the qualitative version of this claim, we will use the pretrained models on the ImageNet-21k datasets that are available online and fine-tune them on different classification tasks. Then, we will compare the results of each type of model: pure vision transformer, pure CNN, and hybrid vision transformer. However, we cannot verify the quantitative results of this claim, as the authors did not share their training data or their pretrained model.
+We are unable to verify the quantitative results of the previous claim because we do not have access to the pretrained models or the **JFT-300M** dataset, which is a private dataset that the authors used for pretraining.
+
+We want to test the claim that the vision transformer models can outperform the CNN models on different classification tasks. However, we do not have the models or the data that the authors used for pretraining. To address this issue, we will use the models that the authors pretrained on the **ImageNet-21k** dataset, which is a public dataset. We will fine-tune these models on various classification tasks, such as CIFAR-10, CIFAR-100, Pets, and Flowers. Then, we will compare the test accuracy of each type of model: pure vision transformer, pure CNN, and hybrid vision transformer.
 
 ***
 :::
