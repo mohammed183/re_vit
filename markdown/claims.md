@@ -84,7 +84,7 @@ We want to **evaluate** the **claims** made by the **vision transformer paper**,
 
 This claim suggests that the vision transformer can leverage more knowledge from large datasets than CNN models during pretraining and transfer this knowledge to the fine tuning task. This implies that the vision transformer can achieve higher or comparable accuracies to the state of the art models on different classification tasks.
 
-The authors support their claim by pretraining three versions of the vision transformer and evaluating their performance on various benchmarks, as shown in the table below. However, they use the **JFT-300M** dataset for pretraining, which is a private dataset owned by Google and *not available* to the public. Also, the authors do not share the models pretrained on the **JFT-300M** dataset. The table below highlights in green the models that can be reproduced with the public data. *(BiT-L is a ResNet152x4 model)*
+The authors support their claim by pretraining three versions of the vision transformer and evaluating their performance on various benchmarks, as shown in the table below. However, they use the **JFT-300M** dataset for pretraining, which is a private dataset owned by Google and *not available* to the public. Also, the authors do not share the models pretrained on the **JFT-300M** dataset. *(BiT-L is a ResNet152x4 model)*
 
 <table style="width: 100%;">
 	<tr>
@@ -153,10 +153,45 @@ The following figure shows the breakdown of the VTAB tasks:
 ![](assets/claim1.png)
 *<small>The models used are not available to the public and cannot be reproduced, as they are trained on the JFT-300M dataset, which is a private dataset owned by Google.</small>*
 
+To test the claim that vision transformers outperform convolutional neural networks on image classification tasks, we need to fine-tune the pretrained models on various datasets and compare their test accuracy. However, we face a challenge: we cannot access the pretrained models or the **JFT-300M** dataset that the authors used for pretraining. This is a private dataset that only they have. The only model we can use from the previous table is the **Vit-L/16(I21k)**, which is marked in green. This model was pretrained on the **ImageNet-21k(I21k)** dataset and released by Google.
 
-We want to validate this claim by fine-tuning the pretrained models on different classification tasks and measuring their test accuracy. However, we have a problem: we do not have access to the pretrained models or the **JFT-300M** dataset, which is a private dataset that the authors used for pretraining. 
+**How can we overcome this challenge and verify their claim?**
 
-**How can we solve this problem and verify their claim?**
+A possible solution is to use other published models that were also pretrained on the **ImageNet-21k** dataset, such as the **BiT-L (I21k)** model. We can fine-tune these models on the same classification datasets as the vision transformer model and compare their performance. We can create a table like the following and fill the missing parts:
+
+<table style="width: 100%;">
+	<tr>
+		<th style="text-align: center;">Model</th>
+		<th style="text-align: center;">ImageNet</th>
+		<th style="text-align: center;">ImageNet ReaL</th>
+		<th style="text-align: center;">CIFAR-10</th>
+		<th style="text-align: center;">CIFAR-100</th>
+		<th style="text-align: center;">Oxford-IIIT Pets</th>
+		<th style="text-align: center;">Oxford Flowers-102</th>
+		<th style="text-align: center;">VTAB (19 tasks)</th>
+	</tr>
+	<tr>
+		<td style="text-align: center;">ViT-L/16 (I21k)</td>
+		<td style="text-align: center;">85.30</td>
+		<td style="text-align: center;">88.62</td>
+		<td style="text-align: center;">99.15</td>
+		<td style="text-align: center;">93.25</td>
+		<td style="text-align: center;">94.67</td>
+		<td style="text-align: center;">99.61</td>
+		<td style="text-align: center;">72.72</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">BiT-L (I21k)</td>
+		<td style="text-align: center;">?</td>
+		<td style="text-align: center;">?</td>
+		<td style="text-align: center;">?</td>
+		<td style="text-align: center;">?</td>
+		<td style="text-align: center;">?</td>
+		<td style="text-align: center;">?</td>
+		<td style="text-align: center;">?</td>
+	</tr>
+
+</table>
 
 ***
 :::
@@ -358,7 +393,7 @@ Model pretrained on the **JFT-300M** dataset:
 
 We want to test the qualitative claim by fine tuning the pretrained models to classify images in the ImageNet dataset as the authors did and examine how the size of each pretraining dataset influences the final test accuracy. However, we cannot verify the results of the **JFT-300M** pretrained models as they are not publicly available.
 
-We can attempt to verify the quantitative claims for the **ImageNet** and **ImageNet-21k** models, but we cannot reproduce the experiment results for the **JFT-300M** dataset as the models and dataset are not publicly available.
+We can only test the quantitative claims for the models pretrained on **ImageNet-21k**, since the models and dataset for **JFT-300M** are not accessible to the public. The models pretrained on **ImageNet-1k** are available, but they use a different optimizer (SAM) than the one described in the paper. This means that we might get similar results, but not exactly the same as the paper.
 
 ***
 :::
@@ -604,33 +639,6 @@ We want to test the claim that the vision transformer models can outperform the 
 
 ::: {.cell .markdown}
 **Note: There are other claims about the computational improvement of the vision transformer model compared to the traditional CNNs that achieve similar results. We will not address any of these claims due to their high computational cost. Moreover, some of these results are not reproducible because of the unavailability of the JFT-300M dataset.**
-
-***
-:::
-
-::: {.cell .markdown}
-# Experiments
-
-In this section, we will attempt to verify the qualitative and quantitative aspects of each claim. We will indicate which claims cannot be verified due to the lack of the material published by the authors. We will mainly use pretrained models published to verify these claims. Below is a table with all the models mentioned in the paper and which versions of it are publicly available.
-
-| Model          | Pretrained ImageNet | pretrained ImageNet-21 | Pretrained JFT |
-| :------------: | :-----------------: | :--------------------: | :------------: |
-| ResNet50x1     | Yes                 | Yes                    | No             |
-| ResNet50x2     | No                  | No                     | No             |
-| ResNet101x1    | Yes                 | Yes                    | No             |
-| ResNet152x1    | No                  | No                     | No             |
-| ResNet152x2    | Yes                 | Yes                    | No             |
-| ResNet152x4    | Yes                 | Yes                    | No             |
-| ResNet200x3    | No                  | No                     | No             |
-| ViT-B/32       | Yes (SAM)           | Yes                    | No             |
-| ViT-B/16       | Yes (SAM)           | Yes                    | No             |
-| ViT-L/32       | Yes (SAM)           | Yes                    | No             |
-| ViT-L/16       | Yes (SAM)           | Yes                    | No             |
-| ViT-H/14       | No                  | Yes                    | No             |
-| R50x1+ViT-B/32 | No                  | No (but R26 available) | No             |
-| R50x1+ViT-B/16 | No                  | Yes                    | No             |
-| R50x1+ViT-L/32 | No                  | Yes                    | No             |
-| R50x1+ViT-L/16 | No                  | Yes                    | No             |
 
 ***
 :::

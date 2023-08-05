@@ -25,11 +25,9 @@ The next few cells show the functions used for finetuning the **ViT-L/16** model
 import os
 import json
 import torch
-import requests
 import numpy as np
 import matplotlib.pyplot as plt
 from transformers import ViTModel
-from torch.utils.data import random_split
 from torchvision import transforms, datasets, models
 ```
 :::

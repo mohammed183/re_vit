@@ -17,11 +17,9 @@ We will use the pretrained weights from the official github repository.
 import os
 import json
 import torch
-import requests
 import numpy as np
 import torch.optim.lr_scheduler
 import matplotlib.pyplot as plt
-from torch.utils.data import random_split
 from torchvision import transforms, datasets, models
 ```
 ::: 
@@ -105,36 +103,50 @@ def get_res_loaders(dataset="imagenet", batch_size=4):
 ::: {.cell .code}
 ```python
 class StdConv2d(nn.Conv2d):
+    """
+    A custom convolutional layer that standardizes the weights before applying them.
+    """
     def forward(self, x):
         w = self.weight
+        # Compute the variance and mean of the weights along the channel, height and width dimensions
         v, m = torch.var_mean(w, dim=[1, 2, 3], keepdim=True, unbiased=False)
+        # Standardize the weights by subtracting the mean and dividing by the standard deviation
         w = (w - m) / torch.sqrt(v + 1e-10)
+        # Apply the standardized weights
         return F.conv2d(x, w, self.bias, self.stride, self.padding, self.dilation, self.groups)
 
+# helper function to create a 3x3 convolutional layer with standardization.    
 def conv3x3(cin, cout, stride=1, groups=1, bias=False):
     return StdConv2d(cin, cout, kernel_size=3, stride=stride, padding=1, bias=bias, groups=groups)
 
+# helper function to create a 1x1 convolutional layer with standardization.
 def conv1x1(cin, cout, stride=1, bias=False):
     return StdConv2d(cin, cout, kernel_size=1, stride=stride, padding=0, bias=bias)
 
+# helper function to convert the weight format from TensorFlow (HWIO) to PyTorch (OIHW).
 def tf2th(conv_weights):
-    """Possibly convert HWIO to OIHW"""
     if conv_weights.ndim == 4:
+        # Transpose the dimensions from height-width-input-output to output-input-height-width
         conv_weights = np.transpose(conv_weights, [3, 2, 0, 1])
     return torch.from_numpy(conv_weights)
 
+
 class PreActBottleneck(nn.Module):
     """
-    Follows the implementation of "Identity Mappings in Deep Residual Networks" here:
-    https://github.com/KaimingHe/resnet-1k-layers/blob/master/resnet-pre-act.lua
-
-    Except it puts the stride on 3x3 conv when available.
+    A custom residual block that uses pre-activation and group normalization.
+    This is based on the paper "Identity Mappings in Deep Residual Networks" by Kaiming He et al.
+    https://arxiv.org/abs/1603.05027
+    However, this implementation differs from the original one by putting
+    the stride on the 3x3 convolution instead of the 1x1 convolution.
     """
     def __init__(self, cin, cout=None, cmid=None, stride=1):
         super().__init__()
+        # Set the output channels to be the same as the input channels if not specified
         cout = cout or cin
+        # Set the middle channels to be one fourth of the output channels if not specified
         cmid = cmid or cout//4
 
+        # Define the group normalization and convolution layers for the block
         self.gn1 = nn.GroupNorm(32, cin)
         self.conv1 = conv1x1(cin, cmid)
         self.gn2 = nn.GroupNorm(32, cmid)
@@ -143,8 +155,8 @@ class PreActBottleneck(nn.Module):
         self.conv3 = conv1x1(cmid, cout)
         self.relu = nn.ReLU(inplace=True)
 
+        # Define the projection layer for the residual branch if needed
         if (stride != 1 or cin != cout):
-            # Projection also with pre-activation according to paper.
             self.downsample = conv1x1(cin, cout, stride)
 
     def forward(self, x):
@@ -153,6 +165,7 @@ class PreActBottleneck(nn.Module):
 
         # Residual branch
         residual = x
+        # If there is a projection layer, apply it to the output of the first activation
         if hasattr(self, 'downsample'):
             residual = self.downsample(out)
 
@@ -160,10 +173,14 @@ class PreActBottleneck(nn.Module):
         out = self.conv1(out)
         out = self.conv2(self.relu(self.gn2(out)))
         out = self.conv3(self.relu(self.gn3(out)))
+        
+        # Add the residual branch to the conv'ed branch and return
         return out + residual
-
+    
+    # helper function to load the weights from a TensorFlow model
     def load_from(self, weights, prefix=''):
         with torch.no_grad():
+            # Copy the weights for each layer from the TensorFlow model to the PyTorch model
             self.conv1.weight.copy_(tf2th(weights[prefix + 'a/standardized_conv2d/kernel']))
             self.conv2.weight.copy_(tf2th(weights[prefix + 'b/standardized_conv2d/kernel']))
             self.conv3.weight.copy_(tf2th(weights[prefix + 'c/standardized_conv2d/kernel']))
@@ -173,10 +190,14 @@ class PreActBottleneck(nn.Module):
             self.gn1.bias.copy_(tf2th(weights[prefix + 'a/group_norm/beta']))
             self.gn2.bias.copy_(tf2th(weights[prefix + 'b/group_norm/beta']))
             self.gn3.bias.copy_(tf2th(weights[prefix + 'c/group_norm/beta']))
+            # If there is a projection layer, copy its weights as well
             if hasattr(self, 'downsample'):
                 self.downsample.weight.copy_(tf2th(weights[prefix + 'a/proj/standardized_conv2d/kernel']))
+        
+        # Return the PyTorch model with loaded weights
         return self
 
+# ResNet Class
 class ResNetV2(nn.Module):
     BLOCK_UNITS = {
         'r50': [3, 4, 6, 3],
