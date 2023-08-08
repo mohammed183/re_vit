@@ -30,22 +30,26 @@ Our task will be to try to reproduce all the qualitative claims, as well as any 
 ::: {.cell .markdown}
 ## Experiment 1:
 
-In this experiment we want to reproduce the claim: "Vision Transformer outperforms state of the art CNNs on various classification tasks after pretraining on large datasets" by using the only available pretrained model in the table in that claim and compare it to the other model that are pretrained on the ImageNet-21k unlike in the original paper where the other models were trained on the JFT-300M private dataset.
+In this experiment we want to reproduce the claim: "Vision Transformer outperforms state of the art CNNs on various classification tasks after pretraining on large datasets" by using the only available pretrained model in the table in that claim and compare it to the other model that are pretrained on the **ImageNet-21k** unlike in the original paper where the other models were trained on the **JFT-300M** private dataset.
 
 ***
 :::
-
-::: {.cell .markdown}
-After running this experiment we should be able to fill the following table and then we validate the claim:
-
-***
-:::
-
 
 ::: {.cell .markdown}
 This Experiment is split into two notebooks:
 
-- The first notebook we train the baseline ResNet-152x4 model (Here will be link to notebook)
-- The second notebook we train the Vit-L/16 model (Here will be link to notebook)
+- First notebook has the baseline model which is the [ResNet-152x4 model](ResNet.ipynb).
+- We then have [Vit-L/16 model](ViT.ipynb) which we will fine tune.
+
 ***
+:::
+
+::: {.cell .markdown}
+After training both notebooks, now we can create the following table using the results stored in `resnet.json` and `vit.json`
+:::
+
+::: {.cell .code}
+```python
+# Function to load the data from both json files and create a table with results
+```
 :::

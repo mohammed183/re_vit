@@ -1,15 +1,14 @@
 ::: {.cell .markdown}
 ## Fine tuning the ResNet model
 
-In this notebook we use the pretrained ResNet-152x4 model on the ImageNet-21k dataset which contains about 14 million images. The model will be finetuned on different datasets which are used for image classification tasks and then used as baseline model:
+In this notebook we use the pretrained **ResNet-152x4** model on the **ImageNet-21k** dataset which contains about 14 million images. The model will be finetuned on different datasets which are used for image classification tasks and then used as baseline model:
 
 ***
 :::
 
 ::: {.cell .markdown}
-We will use the pretrained weights from the official github repository.
+We start by importing the required modules:
 
-***
 :::
 
 ::: {.cell .code}
@@ -18,15 +17,24 @@ import os
 import json
 import torch
 import numpy as np
+import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim.lr_scheduler
 import matplotlib.pyplot as plt
+from collections import OrderedDict
 from torchvision import transforms, datasets, models
 ```
 ::: 
 
+::: {.cell .markdown}
+***
+
+We need to create the dataloaders that will help us train our **ResNet** model. The function `get_res_loaders` can load five different datasets for us. We can select the dataset we want by passing its name to the `dataset` argument. We can also adjust the `batch_size` argument according to the GPU we have.
+:::
+
 ::: {.cell .code}
 ```python
-def get_res_loaders(dataset="imagenet", batch_size=4):
+def get_res_loaders(dataset="imagenet", batch_size=64):
     """
     This loads the whole dataset into memory and returns train and test data to
     be used by the ResNet model
@@ -64,21 +72,20 @@ def get_res_loaders(dataset="imagenet", batch_size=4):
         original_test_dataset = datasets.CIFAR100(root=os.path.join('data', 'cifar100_data'),
                                              train=False, transform=test_transform, download=True)
     elif dataset == "oxford_pets":
-        # Load Oxford-IIIT Pets 
-        original_train_dataset = datasets.OxfordPets(root=os.path.join('data', 'oxford_pets_data'),
-                                             image_set='train', transform=train_transform, download=True)
-        original_test_dataset = datasets.OxfordPets(root=os.path.join('data', 'oxford_pets_data'),
-                                             image_set='test', transform=test_transform, download=True)
-    elif dataset == "oxford_flowers":
+        # Load Oxford-IIIT Pets
+        original_train_dataset = datasets.OxfordIIITPet(root=os.path.join('data', 'oxford_iiit_pets_data'),
+                                             split='trainval', transform=train_transform, download=True)
+        original_test_dataset = datasets.OxfordIIITPet(root=os.path.join('data', 'oxford_iiit_pets_data'),
+                                             split='test', transform=test_transform, download=True)
+    elif dataset == "flowers_102":
         # Load Oxford Flowers-102
-        original_train_dataset = datasets.OxfordFlowers102(root=os.path.join('data', 'oxford_flowers_102_data'),
+        original_train_dataset = datasets.Flowers102(root=os.path.join('data', 'oxford_flowers_102_data'),
                                              split='train', transform=train_transform, download=True)
-        original_test_dataset = datasets.OxfordFlowers102(root=os.path.join('data', 'oxford_flowers_102_data'),
+        original_test_dataset = datasets.Flowers102(root=os.path.join('data', 'oxford_flowers_102_data'),
                                              split='test', transform=test_transform, download=True)
     else:
         # Raise an error if the dataset is not valid
-        raise ValueError("Invalid dataset name. Please choose one of the following: imagenet, cifar10, \
-         cifar100, oxford_pets, oxford_flowers")
+        raise ValueError("Invalid dataset name. Please choose one of the following: imagenet, cifar10, cifar100, oxford_pets, flowers_102")
 
     # Creating data loaders
     loader_args = {
@@ -99,6 +106,12 @@ def get_res_loaders(dataset="imagenet", batch_size=4):
             "test_loader": test_loader}
 ```
 ::: 
+
+::: {.cell .markdown}
+***
+
+Then we use the **ResNet** implementation from the [official repository](https://github.com/google-research/big_transfer) to create our model.
+:::
 
 ::: {.cell .code}
 ```python
@@ -268,6 +281,15 @@ class ResNetV2(nn.Module):
 ```
 ::: 
 
+::: {.cell .markdown}
+***
+
+The following are two helper functions that we use for calculating and evaluating the model performance:
+
+- `get_accuracy`: This function takes the model predictions and the true labels as inputs and returns the accuracy as a float value.
+- `evaluate_on_test`: This function takes the model, the test dataloader, and the device as inputs and returns the test accuracy and loss as float values. 
+:::
+
 ::: {.cell .code}
 ```python
 # Function takes predictions and true values to return accuracies
@@ -279,7 +301,6 @@ def get_accuracy(logit, true_y):
 def evaluate_on_test(model, test_loader, device):
     # Evaluate the model on all the test batches
     accuracies = []
-    losses = []
     model.eval()
     for batch_idx, (data_x, data_y) in enumerate(test_loader):
         data_x = data_x.to(device)
@@ -287,24 +308,36 @@ def evaluate_on_test(model, test_loader, device):
 
 
         model_y = model(data_x)
-        loss = criterion(model_y, data_y)
         batch_accuracy = get_accuracy(model_y, data_y)
 
         accuracies.append(batch_accuracy.item())
-        losses.append(loss.item())
 
-    # Store test accuracy for plotting
-    test_loss = np.mean(losses)
-    test_accuracy = np.mean(accuracies)
-    test_acc.append(test_accuracy*100)
-    return test_accuracy, test_loss
+    test_accuracy = np.mean(accuracies) * 100
+    return test_accuracy
 ```
+:::
+
+::: {.cell .markdown}
+***
+
+The function `train_res_model` takes the following arguments and returns the train and test accuracies of the model:
+
+- `loaders`: A dictionary of PyTorch dataloaders for the train and test sets.
+- title: A string to label the plot of the training and validation losses.
+- `model_name`: A string to specify the name of the ResNet model to use. The default is ‘r152’, which corresponds to ResNet-152.
+- `bit_model`: A string to specify the name of the pretrained Big Transfer (BiT) model to use. The default is “BiT-M-R152x4”, which corresponds to  BiT-M with ResNet-152 backbone and width factor 4.
+- `width_factor`: An integer to scale the width of the ResNet model. The default is 4, which means the number of channels in each layer is multiplied by 4.
+- `lr`: A float to set the learning rate for the optimizer. The default is 0.001.
+- `epochs`: An integer to set the number of epochs for the training loop. The default is 10.
+
+The function first creates a ResNet model with the specified arguments and loads the weights from the pretrained BiT model. Then, it creates an optimizer and a scheduler for the training process. Finally, it runs a training loop for the given number of epochs, where it computes the loss and accuracy for each batch of data, updates the model parameters, and adjusts the learning rate.
+
 :::
 
 ::: {.cell .code}
 ```python
 # Function to train the model and return train and test accuracies
-def train_res_model(title='', loaders, model_name='r152', bit_model="BiT-M-R152x4",
+def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x4",
                        width_factor=4, lr=0.001, epochs=10, random_seed=42, save=False):
 
     # Create experiment directory name if none
@@ -340,27 +373,6 @@ def train_res_model(title='', loaders, model_name='r152', bit_model="BiT-M-R152x
     # Create the optimizer
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
-    # Define a custom function for the learning rate scheduler
-    def custom_scheduler(epoch):
-        stairs_params = [3e-3, 200, 3e-4, 300, 3e-5, 400, 3e-6, 500, None]
-
-        # Define the parameters for the rampup function
-        rampup_params = [100, lr]
-
-        # Compute the learning rate based on the step number
-        if epoch < rampup_params[0]:
-            lr = epoch / rampup_params[0] * rampup_params[1]
-        else:
-            lr = rampup_params[1]
-            for i in range(0, len(stairs_params), 2):
-                if epoch < stairs_params[i]:
-                    break
-                lr = stairs_params[i+1]
-
-        return lr / rampup_params[1]
-    # Create the scheduler
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=custom_scheduler)
-
     # Create the loss function
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -378,8 +390,6 @@ def train_res_model(title='', loaders, model_name='r152', bit_model="BiT-M-R152x
 
         # Calculate loss and gradients for models on every training batch
         for batch_idx, (data_x, data_y) in enumerate(loaders["train_loader"]):
-            # Update the learning rate
-            scheduler.step()
             data_x = data_x.to(device)
             data_y = data_y.to(device)
 
@@ -435,36 +445,47 @@ def train_res_model(title='', loaders, model_name='r152', bit_model="BiT-M-R152x
 ```
 ::: 
 
+::: {.cell .markdown}
+***
+
+The following function `plot_images_from_dataloader` takes a PyTorch dataloader as an input and plots 10 of the images from the first batch of data. The function also shows the labels of the images according to the classes attribute of the dataloader’s dataset
+:::
+
 ::: {.cell .code}
 ```python
-# Define a function that takes a dataloader as parameter and plots 2 rows each contains 5 images
+# Define a function to plot 10 of the images
 def plot_images_from_dataloader(dataloader):
     # Get the first batch of images and labels from the dataloader
     images, labels = next(iter(dataloader))
     classes = dataloader.dataset.classes
     # Create a figure with 2 rows and 5 columns
     fig, axes = plt.subplots(2, 5, figsize=(10, 4))
-    # Loop over the axes and plot each image
     for i, ax in enumerate(axes.flat):
-        # Get the image and label at index i
         image = images[i]
         label = classes[labels[i]]
         # Unnormalize the image
         image = image / 2 + 0.5
-        # Convert the image to numpy array
         image = image.numpy()
-        # Transpose the image to have the channel dimension last
+        # Transpose the image
         image = np.transpose(image, (1, 2, 0))
         # Plot the image on the axis
         ax.imshow(image)
-        # Set the title of the axis to the label
+        # Set title as label
         ax.set_title(label)
         # Turn off the axis ticks
         ax.set_xticks([])
         ax.set_yticks([])
-    # Show the plot
     plt.show()
 ```
+:::
+
+::: {.cell .markdown}
+***
+
+We download the models that we will be using through the rest of the notebook:
+
+- The `BiT-M-R152x4` is pretrained on the **ImageNet-21k** and not fine tuned at all.
+- The `BiT-M-R152x4-ILSVRC2012` is pretreained on the **ImageNet-21k** and fine tuned on the **ImageNet-1k**
 :::
 
 ::: {.cell .code}
@@ -484,9 +505,15 @@ curl -L -o pretrained_models/BiT-M-R152x4-ILSVRC2012.npz "https://storage.google
 
 ::: {.cell .code}
 ```python
+# Function used to load npz files
 def get_weights(bit_variant):
     return np.load(f'pretrained_models/{bit_variant}.npz')
 ```
+:::
+
+::: {.cell .markdown}
+***
+
 :::
 
 ::: {.cell .markdown}
@@ -497,12 +524,23 @@ The ImageNet dataset consists of **1000** object classes and contains **1,281,16
 ***
 :::
 
+::: {.cell .markdown}
+
+The first step is to load the dataset and choose the `batch_size` that suits our GPU capacity. This will help us avoid errors during the training process. Next, we use the `plot_images_from_dataloader` function to display 10 of the images from the first batch of data. We can see the labels of the images on top of each plot. However, we need to make sure that the batch size is at least 10, otherwise the function will raise an error.
+:::
+
 ::: {.cell .code}
 ```python
 # Plot some images from the ImageNet dataset
 loader = get_res_loaders(dataset="imagenet", batch_size=32)
 plot_images_from_dataloader(loader["test_loader"])
 ```
+:::
+
+::: {.cell .markdown}
+***
+
+For the **ImageNet** dataset we already have the `BiT-M-R152x4-ILSVRC2012` which is already fine tuned on the dataset. We will create the model and load its weights and evaluate it on the test set.
 :::
 
 ::: {.cell .code}
@@ -529,16 +567,31 @@ model.to(device);
 ```
 :::
 
-::: {.cell .code}
-```python
-# Print the Performance of the Ready fine tuned model
-train_acc_imagenet, _ = evaluate_on_test(model, loader["train_loader"], device)
-test_acc_imagenet, _ = evaluate_on_test(model, loader["test_loader"], device)
-```
+::: {.cell .markdown}
+***
+
+We use the `evaluate_on_test` function to get the train and test accuracies for the model.
 :::
 
 ::: {.cell .code}
 ```python
+# Print the Performance of the Ready fine tuned model
+train_acc_imagenet = evaluate_on_test(model, loader["train_loader"], device)
+test_acc_imagenet = evaluate_on_test(model, loader["test_loader"], device)
+```
+:::
+
+::: {.cell .markdown}
+***
+
+We save the results in a dictionary that will be used to create a table with the model's results.
+:::
+
+::: {.cell .code}
+```python
+# Create dictionary runs
+runs = {}
+
 # Add the results to a dictionary
 runs["imagenet"] = { 'training_accuracy' : train_acc_imagenet,
                        'test_accuracy' : test_acc_imagenet,
@@ -555,11 +608,21 @@ with open("experiments/exp1/res.json", "w") as f:
 :::
 
 ::: {.cell .markdown}
+***
+
+:::
+
+::: {.cell .markdown}
 ### CIFAR-10
 
 The CIFAR-10 dataset consists of **60,000 32x32** color images in **10** different classes. The 10 classes are airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. There are **6,000** images per class, with **5,000** for training and **1,000** for testing. It is a popular benchmark for image classification and deep learning research. 
 
 ***
+:::
+
+::: {.cell .markdown}
+
+We start by loading the **CIFAR-10** dataset and some of the images in it.
 :::
 
 ::: {.cell .code}
@@ -570,11 +633,23 @@ plot_images_from_dataloader(loader["train_loader"])
 ```
 :::
 
+::: {.cell .markdown}
+***
+
+We then fine-tune the model for 10 epochs on the dataset and get the train and test accuracies.
+:::
+
 ::: {.cell .code}
 ```python
 # Fine tune the model on imagenet
 train_acc_cifar10, test_acc_cifar10 = train_res_model(loaders=loader)
 ```
+:::
+
+::: {.cell .markdown}
+***
+
+We save the results in the same dictionary as before.
 :::
 
 ::: {.cell .code}
@@ -595,11 +670,20 @@ with open("experiments/exp1/res.json", "w") as f:
 :::
 
 ::: {.cell .markdown}
+***
+
+:::
+
+::: {.cell .markdown}
 ### CIFAR-100
 
 The CIFAR-100 dataset consists of **60,000 32x32** color images in **100** different classes. The 100 classes are grouped into 20 superclasses, such as aquatic mammals, flowers, insects, vehicles, etc. There are **600** images per class, with **500** for training and **100** for testing. It is also a commonly benchmark for image classification and deep learning research.
 
 ***
+:::
+
+::: {.cell .markdown}
+As before we load and plot the dataset that we will fine tune the model on.
 :::
 
 ::: {.cell .code}
@@ -610,11 +694,23 @@ plot_images_from_dataloader(loader["train_loader"])
 ```
 :::
 
+::: {.cell .markdown}
+***
+
+We fine-tune the model again for 10 epochs on the **CIFAR-100** dataset.
+:::
+
 ::: {.cell .code}
 ```python
 # Fine tune the model on imagenet
 train_acc_cifar100, test_acc_cifar100 = train_res_model(loaders=loader)
 ```
+:::
+
+::: {.cell .markdown}
+***
+
+We save the results to be able to use it later for creating this model's results table.
 :::
 
 ::: {.cell .code}
@@ -635,11 +731,20 @@ with open("experiments/exp1/res.json", "w") as f:
 :::
 
 ::: {.cell .markdown}
+***
+
+:::
+
+::: {.cell .markdown}
 ### Oxford-IIIT Pets
 
 The Oxford-IIIT Pets is a **37** category pet dataset with roughly **200** images for each class created by the Visual Geometry Group at Oxford. The images have large variations in scale, pose and lighting. All images have an associated ground truth annotation of breed, head ROI (region of interest), and pixel level trimap segmentation. The dataset is useful for fine-grained image classification and segmentation tasks.
 
 ***
+:::
+
+::: {.cell .markdown}
+We start again by loading and plotting the dataset. Make sure the batch size written is suitable for the GPU you are using to prevent any errors.
 :::
 
 ::: {.cell .code}
@@ -650,11 +755,24 @@ plot_images_from_dataloader(loader["train_loader"])
 ```
 :::
 
+::: {.cell .markdown}
+***
+
+We fine-tune the model pretrained on `ImageNet-21k` on the `OxfordPets` dataset. We get the training and testing accuracies for 10 epochs in the 
+`train_acc_oxford_pets` and `test_acc_oxford_pets` arrays.
+:::
+
 ::: {.cell .code}
 ```python
 # Fine tune the model on imagenet
 train_acc_oxford_pets, test_acc_oxford_pets = train_res_model(loaders=loader)
 ```
+:::
+
+::: {.cell .markdown}
+***
+
+We save the results in the runs dictionary under the dataset name.
 :::
 
 ::: {.cell .code}
@@ -675,11 +793,21 @@ with open("experiments/exp1/res.json", "w") as f:
 :::
 
 ::: {.cell .markdown}
+***
+
+:::
+
+::: {.cell .markdown}
 ### Oxford Flowers-102
 
 The Oxford Flowers-102 dataset consists of **102** flower categories commonly occurring in the United Kingdom. Each class consists of between **40 and 258** images. The images have large scale, pose and light variations. In addition, there are categories that have large variations within the category and several very similar categories. The dataset also provides image labels, segmentations, and distances based on shape and color features.
 
 ***
+:::
+
+::: {.cell .markdown}
+
+The PyTorch dataset for this dataset does not contain the class labels, so we create an array called `flower_classes` to store them. We then use dataloaders to load the dataset and display the first 10 images from the train loader.
 :::
 
 ::: {.cell .code}
@@ -711,11 +839,23 @@ plot_images_from_dataloader(loader["train_loader"])
 ```
 :::
 
+::: {.cell .markdown}
+***
+
+We fine-tune the model on the dataset and obtain the train and test accuracies array.
+:::
+
 ::: {.cell .code}
 ```python
 # Fine tune the model on imagenet
 train_acc_oxford_flowers, test_acc_oxford_flowers = train_res_model(loaders=loader)
 ```
+:::
+
+::: {.cell .markdown}
+***
+
+We store the result in `runs` dictionary to be used later for creating the table.
 :::
 
 ::: {.cell .code}
@@ -733,4 +873,10 @@ runs["oxford_flowers"] = { 'training_accuracy' : train_acc_oxford_flowers,
 with open("experiments/exp1/res.json", "w") as f:
     json.dump(runs, f)
 ```
+:::
+
+::: {.cell .markdown}
+***
+
+Now that we are done with the **ResNet** model which we consider our baseline, we can start fine-tuning the the **ViT** model.
 :::
