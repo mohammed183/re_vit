@@ -15,11 +15,11 @@ We start by importing the required modules:
 ```python
 import os
 import json
+import time
 import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim.lr_scheduler
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 from torchvision import transforms, datasets, models
@@ -34,6 +34,15 @@ We need to create the dataloaders that will help us train our **ResNet** model. 
 
 ::: {.cell .code}
 ```python
+# The following dicts hold resize values
+known_dataset_sizes = {
+  'cifar10': (128, 128),
+  'cifar100': (128, 128),
+  'oxford_pets': (224, 224),
+  'flowers_102': (224, 224),
+  'imagenet': (224, 224),
+}
+
 def get_res_loaders(dataset="imagenet", batch_size=64):
     """
     This loads the whole dataset into memory and returns train and test data to
@@ -43,30 +52,33 @@ def get_res_loaders(dataset="imagenet", batch_size=64):
 
     @returns dict() with train and test data loaders with keys `train_loader`, `test_loader`
     """
+    # Get image size
+    crop = known_dataset_sizes[dataset]
     # Normalization using channel means
     normalize_transform = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
     # Creating transform function
-    train_transform =transforms.Compose([transforms.Resize((128,128)), transforms.ToTensor(), normalize_transform])
+    train_transform =transforms.Compose([transforms.Resize(crop), transforms.ToTensor(), normalize_transform])
 
     # Test transformation function
-    test_transform =transforms.Compose([transforms.Resize((128,128)), transforms.ToTensor(), normalize_transform])
+    test_transform =transforms.Compose([transforms.Resize(crop), transforms.ToTensor(), normalize_transform])
 
-    # Load the dataset from torchvision datasets 
+    # Load the dataset from torchvision datasets
     if dataset == "imagenet":
         # Load ImageNet
-        original_train_dataset = datasets.ImageNet(root=os.path.join('data', 'imagenet_data'),
-                                             split='train', transform=train_transform, download=True)
-        original_test_dataset = datasets.ImageNet(root=os.path.join('data', 'imagenet_data'),
-                                             split='val', transform=test_transform, download=True)
+        original_train_dataset = None
+        train_loader = None
+
+        original_test_dataset = datasets.ImageFolder(root=os.path.join('data', 'imagenet', 'val'), transform=test_transform)
+
     elif dataset == "cifar10":
-        # Load CIFAR-10 
+        # Load CIFAR-10
         original_train_dataset = datasets.CIFAR10(root=os.path.join('data', 'cifar10_data'),
                                              train=True, transform=train_transform, download=True)
         original_test_dataset = datasets.CIFAR10(root=os.path.join('data', 'cifar10_data'),
                                              train=False, transform=test_transform, download=True)
     elif dataset == "cifar100":
-        # Load CIFAR-100 
+        # Load CIFAR-100
         original_train_dataset = datasets.CIFAR100(root=os.path.join('data', 'cifar100_data'),
                                              train=True, transform=train_transform, download=True)
         original_test_dataset = datasets.CIFAR100(root=os.path.join('data', 'cifar100_data'),
@@ -91,15 +103,15 @@ def get_res_loaders(dataset="imagenet", batch_size=64):
     loader_args = {
         "batch_size": batch_size,
     }
-
-    train_loader = torch.utils.data.DataLoader(
-        dataset=original_train_dataset,
-        shuffle=True,
-        **loader_args)
+    if original_train_dataset is not None:
+        train_loader = torch.utils.data.DataLoader(
+            dataset=original_train_dataset,
+            shuffle=True,
+            **loader_args)
 
     test_loader = torch.utils.data.DataLoader(
         dataset=original_test_dataset,
-        shuffle=False,
+        shuffle=True,
         **loader_args)
 
     return {"train_loader": train_loader,
@@ -306,13 +318,13 @@ def evaluate_on_test(model, test_loader, device):
         data_x = data_x.to(device)
         data_y = data_y.to(device)
 
-
         model_y = model(data_x)
         batch_accuracy = get_accuracy(model_y, data_y)
 
         accuracies.append(batch_accuracy.item())
 
     test_accuracy = np.mean(accuracies) * 100
+    print(f"Test accuracy: {test_accuracy}")
     return test_accuracy
 ```
 :::
@@ -338,10 +350,10 @@ The function first creates a ResNet model with the specified arguments and loads
 ```python
 # Function to train the model and return train and test accuracies
 def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x4",
-                       width_factor=4, lr=0.001, epochs=10, random_seed=42, save=False):
+                       width_factor=4, lr=0.003, epochs=10, random_seed=42, save=False):
 
     # Create experiment directory name if none
-    experiment_dir = os.path.join('experiments/exp1', title)
+    experiment_dir = os.path.join('experiments', title)
 
     # make experiment directory
     os.makedirs(experiment_dir, exist_ok=True)
@@ -373,16 +385,24 @@ def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x
     # Create the optimizer
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
+    # Calculate per_step, authors used 512 batch size
+    batch_size = loaders["train_loader"].batch_size
+    per_step = int(512/batch_size)
+
+    # Create the scheduler with cosine learning rate decay
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs*per_step, verbose=True)
+
     # Create the loss function
     criterion = torch.nn.CrossEntropyLoss()
 
     # Arrays to hold accuracies
     test_acc = []
     train_acc = []
-
+    step = 0
     # Iterate over the number of epochs
     for epoch in range(1, epochs + 1):
         # Make model params trainable
+        model.to(device);
         model.train()
         print(f"Epoch {epoch}")
         accuracies = []
@@ -405,6 +425,11 @@ def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x
             accuracies.append(batch_accuracy.item())
             losses.append(loss.item())
 
+            step+=1
+            # Check if time to change learning rate
+            if step % per_step == 0:
+                scheduler.step()
+
         # Store training accuracy for plotting
         train_loss = np.mean(losses)
         train_accuracy = np.mean(accuracies)
@@ -416,10 +441,12 @@ def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x
         accuracies = []
         losses = []
         model.eval()
+        # Move the model to CPU
+        model.to("cpu")
         for batch_idx, (data_x, data_y) in enumerate(loaders["test_loader"]):
-            data_x = data_x.to(device)
-            data_y = data_y.to(device)
-
+            # Move the data to CPU
+            data_x = data_x.to("cpu")
+            data_y = data_y.to("cpu")
 
             model_y = model(data_x)
             loss = criterion(model_y, data_y)
@@ -428,17 +455,27 @@ def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x
             accuracies.append(batch_accuracy.item())
             losses.append(loss.item())
 
+            # Break if there are more than 500 samples and not last iteration
+            if (batch_idx+1)*batch_size > 500 and epoch < epochs:
+                break
+
         # Store test accuracy for plotting
         test_loss = np.mean(losses)
         test_accuracy = np.mean(accuracies)
         test_acc.append(test_accuracy*100)
         print("Test accuracy: {} Test loss: {}".format(test_accuracy, test_loss))
 
+
     if save:
         # Save the final model
         torch.save({
             'model': model.state_dict()
         }, os.path.join(experiment_dir, f'{bit_model}.pt'))
+
+    # Delete the data and model outputs from GPU memory
+    del model, optimizer
+    # Release unused memory
+    torch.cuda.empty_cache()
 
     # return the accuracies
     return train_acc, test_acc
@@ -455,8 +492,17 @@ The following function `plot_images_from_dataloader` takes a PyTorch dataloader 
 ```python
 # Define a function to plot 10 of the images
 def plot_images_from_dataloader(dataloader):
-    # Get the first batch of images and labels from the dataloader
-    images, labels = next(iter(dataloader))
+    # Initialize empty tensors for images and labels
+    images = torch.empty(0)
+    labels = torch.empty(0, dtype=torch.long)
+
+    # Loop until the images and labels have at least 10 elements
+    while len(images) < 10:
+        # Get the next batch of images and labels from the dataloader
+        batch_images, batch_labels = next(iter(dataloader))
+        # Concatenate the batch images and labels to the existing tensors
+        images = torch.cat((images, batch_images), dim=0)
+        labels = torch.cat((labels, batch_labels), dim=0)
     classes = dataloader.dataset.classes
     # Create a figure with 2 rows and 5 columns
     fig, axes = plt.subplots(2, 5, figsize=(10, 4))
@@ -476,6 +522,14 @@ def plot_images_from_dataloader(dataloader):
         ax.set_xticks([])
         ax.set_yticks([])
     plt.show()
+```
+:::
+
+::: {.cell .code}
+```python
+# Function used to load npz files
+def get_weights(bit_variant):
+    return np.load(f'pretrained_models/{bit_variant}.npz')
 ```
 :::
 
@@ -503,14 +557,6 @@ curl -L -o pretrained_models/BiT-M-R152x4-ILSVRC2012.npz "https://storage.google
 ```
 :::
 
-::: {.cell .code}
-```python
-# Function used to load npz files
-def get_weights(bit_variant):
-    return np.load(f'pretrained_models/{bit_variant}.npz')
-```
-:::
-
 ::: {.cell .markdown}
 ***
 
@@ -532,7 +578,7 @@ The first step is to load the dataset and choose the `batch_size` that suits our
 ::: {.cell .code}
 ```python
 # Plot some images from the ImageNet dataset
-loader = get_res_loaders(dataset="imagenet", batch_size=32)
+loader = get_res_loaders(dataset="imagenet", batch_size=2)
 plot_images_from_dataloader(loader["test_loader"])
 ```
 :::
@@ -553,7 +599,7 @@ else:
     device = torch.device('cpu')
 
 # Get num_classes
-num_classes = len(loaders["train_loader"].dataset.classes)
+num_classes = len(loader["test_loader"].dataset.classes)
 
 # Get weights
 print(f"Loading BiT-M-R152x4-ILSVRC2012 weights...")
@@ -561,7 +607,7 @@ weights = get_weights("BiT-M-R152x4-ILSVRC2012")
 print("Weight successfully loaded")
 
 # Initialize the ResNet model
-model = ResNetV2(ResNetV2.BLOCK_UNITS['r152'], width_factor=4, head_size=num_classes, zero_head=True)
+model = ResNetV2(ResNetV2.BLOCK_UNITS['r152'], width_factor=4, head_size=num_classes)
 model.load_from(weights)
 model.to(device);
 ```
@@ -575,9 +621,17 @@ We use the `evaluate_on_test` function to get the train and test accuracies for 
 
 ::: {.cell .code}
 ```python
+# Save start time
+start_time = time.time()
 # Print the Performance of the Ready fine tuned model
-train_acc_imagenet = evaluate_on_test(model, loader["train_loader"], device)
 test_acc_imagenet = evaluate_on_test(model, loader["test_loader"], device)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
+# delete model to free gpu
+del model
+# Release unused memory
+torch.cuda.empty_cache()
 ```
 :::
 
@@ -592,17 +646,22 @@ We save the results in a dictionary that will be used to create a table with the
 # Create dictionary runs
 runs = {}
 
+# Check if the file exists
+if os.path.exists("experiments/resnet.json"):
+    # Open the file in read mode
+    with open("experiments/resnet.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
+
 # Add the results to a dictionary
-runs["imagenet"] = { 'training_accuracy' : train_acc_imagenet,
-                       'test_accuracy' : test_acc_imagenet,
-                     }
+runs["imagenet"] =  test_acc_imagenet
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/res.json", "w") as f:
+with open("experiments/resnet.json", "w") as f:
     json.dump(runs, f)
 ```
 :::
@@ -628,7 +687,7 @@ We start by loading the **CIFAR-10** dataset and some of the images in it.
 ::: {.cell .code}
 ```python
 # Plot some images from the CIFAR-10 dataset
-loader = get_res_loaders(dataset="cifar10", batch_size=32)
+loader = get_res_loaders(dataset="cifar10", batch_size=16)
 plot_images_from_dataloader(loader["train_loader"])
 ```
 :::
@@ -641,8 +700,12 @@ We then fine-tune the model for 10 epochs on the dataset and get the train and t
 
 ::: {.cell .code}
 ```python
-# Fine tune the model on imagenet
+start_time = time.time()
+# Fine tune the model on CIFAR-10
 train_acc_cifar10, test_acc_cifar10 = train_res_model(loaders=loader)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
 ```
 :::
 
@@ -654,17 +717,26 @@ We save the results in the same dictionary as before.
 
 ::: {.cell .code}
 ```python
+# Create dictionary runs
+runs = {}
+
+# Check if the file exists
+if os.path.exists("experiments/resnet.json"):
+    # Open the file in read mode
+    with open("experiments/resnet.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
+
 # Add the results to a dictionary
-runs["cifar10"] = { 'training_accuracy' : train_acc_cifar10,
-                       'test_accuracy' : test_acc_cifar10,
-                     }
+runs["cifar10"] = test_acc_cifar10[-1]
+
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/res.json", "w") as f:
+with open("experiments/resnet.json", "w") as f:
     json.dump(runs, f)
 ```
 :::
@@ -689,7 +761,7 @@ As before we load and plot the dataset that we will fine tune the model on.
 ::: {.cell .code}
 ```python
 # Plot some images from the CIFAR-100 dataset
-loader = get_res_loaders(dataset="cifar100", batch_size=32)
+loader = get_res_loaders(dataset="cifar100", batch_size=16)
 plot_images_from_dataloader(loader["train_loader"])
 ```
 :::
@@ -702,8 +774,12 @@ We fine-tune the model again for 10 epochs on the **CIFAR-100** dataset.
 
 ::: {.cell .code}
 ```python
-# Fine tune the model on imagenet
+start_time = time.time()
+# Fine tune the model on CIFAR-100
 train_acc_cifar100, test_acc_cifar100 = train_res_model(loaders=loader)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
 ```
 :::
 
@@ -715,17 +791,25 @@ We save the results to be able to use it later for creating this model's results
 
 ::: {.cell .code}
 ```python
+# Create dictionary runs
+runs = {}
+
+# Check if the file exists
+if os.path.exists("experiments/resnet.json"):
+    # Open the file in read mode
+    with open("experiments/resnet.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
+
 # Add the results to a dictionary
-runs["cifar100"] = { 'training_accuracy' : train_acc_cifar100,
-                       'test_accuracy' : test_acc_cifar100,
-                     }
+runs["cifar100"] = test_acc_cifar100[-1]
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/res.json", "w") as f:
+with open("experiments/resnet.json", "w") as f:
     json.dump(runs, f)
 ```
 :::
@@ -750,7 +834,7 @@ We start again by loading and plotting the dataset. Make sure the batch size wri
 ::: {.cell .code}
 ```python
 # Plot some images from the Oxford-IIIT Pets dataset
-loader = get_res_loaders(dataset="oxford_pets", batch_size=32)
+loader = get_res_loaders(dataset="oxford_pets", batch_size=4)
 plot_images_from_dataloader(loader["train_loader"])
 ```
 :::
@@ -764,8 +848,12 @@ We fine-tune the model pretrained on `ImageNet-21k` on the `OxfordPets` dataset.
 
 ::: {.cell .code}
 ```python
-# Fine tune the model on imagenet
+start_time = time.time()
+# Fine tune the model on Oxford-IIIT Pets
 train_acc_oxford_pets, test_acc_oxford_pets = train_res_model(loaders=loader)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
 ```
 :::
 
@@ -777,17 +865,25 @@ We save the results in the runs dictionary under the dataset name.
 
 ::: {.cell .code}
 ```python
+# Create dictionary runs
+runs = {}
+
+# Check if the file exists
+if os.path.exists("experiments/resnet.json"):
+    # Open the file in read mode
+    with open("experiments/resnet.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
+
 # Add the results to a dictionary
-runs["oxford_pets"] = { 'training_accuracy' : train_acc_oxford_pets,
-                       'test_accuracy' : test_acc_oxford_pets,
-                     }
+runs["oxford_pets"] = test_acc_oxford_pets[-1]
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/res.json", "w") as f:
+with open("experiments/resnet.json", "w") as f:
     json.dump(runs, f)
 ```
 :::
@@ -813,7 +909,7 @@ The PyTorch dataset for this dataset does not contain the class labels, so we cr
 ::: {.cell .code}
 ```python
 # Plot some images from the Oxford Flowers-102 Pets dataset
-loader = get_res_loaders(dataset="oxford_flowers", batch_size=32)
+loader = get_res_loaders(dataset="flowers_102", batch_size=4)
 
 # We initialize the flowers names as they are not on Pytorch (used for plotting)
 flower_classes = ['pink primrose', 'hard-leaved pocket orchid', 'canterbury bells', 'sweet pea',
@@ -847,8 +943,12 @@ We fine-tune the model on the dataset and obtain the train and test accuracies a
 
 ::: {.cell .code}
 ```python
-# Fine tune the model on imagenet
-train_acc_oxford_flowers, test_acc_oxford_flowers = train_res_model(loaders=loader)
+start_time = time.time()
+# Fine tune the model on Oxford Flowers-102
+train_acc_oxford_flowers, test_acc_oxford_flowers = train_res_model(loader, epochs=10)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
 ```
 :::
 
@@ -860,17 +960,24 @@ We store the result in `runs` dictionary to be used later for creating the table
 
 ::: {.cell .code}
 ```python
-# Add the results to a dictionary
-runs["oxford_flowers"] = { 'training_accuracy' : train_acc_oxford_flowers,
-                       'test_accuracy' : test_acc_oxford_flowers,
-                     }
+# Create dictionary runs
+runs = {}
+
+# Check if the file exists
+if os.path.exists("experiments/resnet.json"):
+    # Open the file in read mode
+    with open("experiments/resnet.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
+
+runs["oxford_flowers"] = test_acc_oxford_flowers[-1]
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/res.json", "w") as f:
+with open("experiments/resnet.json", "w") as f:
     json.dump(runs, f)
 ```
 :::

@@ -593,7 +593,7 @@ For this dataset we need to define the classes array as it is not defined in the
 ::: {.cell .code}
 ```python
 # Plot some images from the Oxford Flowers-102 Pets dataset
-loader = get_vit_loaders(dataset="oxford_flowers", batch_size=32)
+loader = get_vit_loaders(dataset="flowers_102", batch_size=32)
 
 # We initialize the flowers names as they are not on Pytorch (used for plotting)
 flower_classes = ['pink primrose', 'hard-leaved pocket orchid', 'canterbury bells', 'sweet pea',
@@ -634,7 +634,7 @@ train_acc_oxford_flowers, test_acc_oxford_flowers = train_vit_model(loaders=load
 ::: {.cell .markdown}
 *** 
 
-Now we save the fine=tuning results in the `runs` dictionary.
+Now we save the fine-tuning results in the `runs` dictionary.
 :::
 
 ::: {.cell .code}
