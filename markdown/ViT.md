@@ -15,19 +15,13 @@ We start by importing the required modules.
 
 ::: {.cell .code}
 ```python
-# install hugging face transformer <<< Move later to requirements >>>
-!pip install transformers
-```
-::: 
-
-::: {.cell .code}
-```python
 import os
-import json 
+import json
+import time
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from transformers import ViTModel
+from transformers import ViTForImageClassification
 from torchvision import transforms, datasets, models
 ```
 :::
@@ -62,10 +56,11 @@ def get_vit_loaders(dataset="imagenet", batch_size=64):
     # Load the dataset from torchvision datasets
     if dataset == "imagenet":
         # Load ImageNet
-        original_train_dataset = datasets.ImageNet(root=os.path.join('data', 'imagenet_data'),
-                                             split='train', transform=train_transform)
-        original_test_dataset = datasets.ImageNet(root=os.path.join('data', 'imagenet_data'),
-                                             split='val', transform=test_transform, download=True)
+        original_train_dataset = None
+        train_loader = None
+        test_transform = transforms.Compose([transforms.Resize((384,384)), transforms.ToTensor(), normalize_transform])
+        original_test_dataset = datasets.ImageFolder(root=os.path.join('data', 'imagenet', 'val'), transform=test_transform)
+
     elif dataset == "cifar10":
         # Load CIFAR-10
         original_train_dataset = datasets.CIFAR10(root=os.path.join('data', 'cifar10_data'),
@@ -99,14 +94,15 @@ def get_vit_loaders(dataset="imagenet", batch_size=64):
         "batch_size": batch_size,
     }
 
-    train_loader = torch.utils.data.DataLoader(
-        dataset=original_train_dataset,
-        shuffle=True,
-        **loader_args)
+    if original_train_dataset is not None:
+        train_loader = torch.utils.data.DataLoader(
+            dataset=original_train_dataset,
+            shuffle=True,
+            **loader_args)
 
     test_loader = torch.utils.data.DataLoader(
         dataset=original_test_dataset,
-        shuffle=False,
+        shuffle=True,
         **loader_args)
 
     return {"train_loader": train_loader,
@@ -137,14 +133,16 @@ def evaluate_on_test(model, test_loader, device):
         data_x = data_x.to(device)
         data_y = data_y.to(device)
 
-
-        model_y = model.classifier(model(data_x).pooler_output)
-        batch_accuracy = get_accuracy(model_y, data_y)
+        model_y = model(data_x)
+        batch_accuracy = get_accuracy(model_y.logits, data_y)
 
         accuracies.append(batch_accuracy.item())
-        losses.append(loss.item())
+
+        if batch_idx%1000 == 0:
+            print(f"Mean accuracy at batch: {batch_idx} is {np.mean(accuracies) * 100}")
 
     test_accuracy = np.mean(accuracies) * 100
+    print(f"Test accuracy: {test_accuracy}")
     return test_accuracy
 ```
 :::
@@ -168,8 +166,8 @@ The function returns two lists of floats, which are the train and test accuracie
 def train_vit_model(loaders, title="", model_name='google/vit-large-patch16-224-in21k',
                          lr=0.003, epochs=10, random_seed=42, save=False):
 
-    # Create experiment directory 
-    experiment_dir = os.path.join('experiments/exp1', title)
+    # Create experiment directory
+    experiment_dir = os.path.join('experiments', title)
 
     # make experiment directory
     os.makedirs(experiment_dir, exist_ok=True)
@@ -189,16 +187,15 @@ def train_vit_model(loaders, title="", model_name='google/vit-large-patch16-224-
     num_classes = len(loaders["train_loader"].dataset.classes)
 
     # Load the pre-trained model
-    model = ViTModel.from_pretrained(model_name)
-    # Create a new linear layer with num_classes
-    new_classifier = torch.nn.Linear(model.config.hidden_size, num_classes)
-    # Assign it to the model.classifier attribute
-    model.classifier = new_classifier
+    model = ViTForImageClassification.from_pretrained(model_name, num_labels=num_classes)
     # Move the model to the device
     model = model.to(device)
 
     # Create the optimizer
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
+    # Get batch size
+    batch_size = loaders["train_loader"].batch_size
 
     # Create the loss function
     criterion = torch.nn.CrossEntropyLoss()
@@ -206,9 +203,9 @@ def train_vit_model(loaders, title="", model_name='google/vit-large-patch16-224-
     # Arrays to hold accuracies
     test_acc = [0]
     train_acc = [0]
-
     # Iterate over the number of epochs
     for epoch in range(1, epochs + 1):
+        model.to(device);
         model.train()
         print(f"Epoch {epoch}")
         accuracies = []
@@ -220,7 +217,8 @@ def train_vit_model(loaders, title="", model_name='google/vit-large-patch16-224-
             data_y = data_y.to(device)
 
             optimizer.zero_grad()
-            model_y = model.classifier(model(data_x).pooler_output)
+            #model_y = model.classifier(model(data_x).pooler_output)
+            model_y = model(data_x).logits
             loss = criterion(model_y, data_y)
             batch_accuracy = get_accuracy(model_y, data_y)
 
@@ -242,17 +240,23 @@ def train_vit_model(loaders, title="", model_name='google/vit-large-patch16-224-
         accuracies = []
         losses = []
         model.eval()
+        # Move the model to CPU
+        model.to("cpu")
         for batch_idx, (data_x, data_y) in enumerate(loaders["test_loader"]):
-            data_x = data_x.to(device)
-            data_y = data_y.to(device)
+            # Move the data to CPU
+            data_x = data_x.to("cpu")
+            data_y = data_y.to("cpu")
 
-
-            model_y = model.classifier(model(data_x).pooler_output)
+            model_y = model(data_x).logits
             loss = criterion(model_y, data_y)
             batch_accuracy = get_accuracy(model_y, data_y)
 
             accuracies.append(batch_accuracy.item())
             losses.append(loss.item())
+
+            # Break if there are more than 500 samples and not last iteration
+            if (batch_idx+1)*batch_size > 500 and epoch < epochs:
+                break
 
         # Store test accuracy for plotting
         test_loss = np.mean(losses)
@@ -281,8 +285,17 @@ The following function `plot_images_from_dataloader` takes a PyTorch dataloader 
 ```python
 # Define a function to plot 10 of the images
 def plot_images_from_dataloader(dataloader):
-    # Get the first batch of images and labels from the dataloader
-    images, labels = next(iter(dataloader))
+    # Initialize empty tensors for images and labels
+    images = torch.empty(0)
+    labels = torch.empty(0, dtype=torch.long)
+
+    # Loop until the images and labels have at least 10 elements
+    while len(images) < 10:
+        # Get the next batch of images and labels from the dataloader
+        batch_images, batch_labels = next(iter(dataloader))
+        # Concatenate the batch images and labels to the existing tensors
+        images = torch.cat((images, batch_images), dim=0)
+        labels = torch.cat((labels, batch_labels), dim=0)
     classes = dataloader.dataset.classes
     # Create a figure with 2 rows and 5 columns
     fig, axes = plt.subplots(2, 5, figsize=(10, 4))
@@ -302,6 +315,18 @@ def plot_images_from_dataloader(dataloader):
         ax.set_xticks([])
         ax.set_yticks([])
     plt.show()
+
+# Define a function to calculate runtime per dataset
+def print_time(start_time, end_time):
+    # Calculate the difference in seconds
+    diff = end_time - start_time
+
+    # Convert the difference to hours, minutes, and seconds
+    hours, remainder = divmod(diff, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    # Print the time in hours:minutes:seconds format
+    print(f"Cell execution time: {int(hours)}:{int(minutes)}:{seconds}")
 ```
 :::
 
@@ -320,7 +345,7 @@ The first thing we do is load the dataset into a PyTorch dataloader and plot a s
 ::: {.cell .code}
 ```python
 # Plot some images from the ImageNet dataset
-loader = get_vit_loaders(dataset="imagenet", batch_size=32)
+loader = get_vit_loaders(dataset="imagenet", batch_size=8)
 plot_images_from_dataloader(loader["test_loader"])
 ```
 :::
@@ -341,10 +366,10 @@ else:
     device = torch.device('cpu')
 
 # Get num_classes
-num_classes = len(loader["train_loader"].dataset.classes)
+num_classes = len(loader["test_loader"].dataset.classes)
 
 # Get the fine tuned model on the ImageNet dataset
-model = ViTModel.from_pretrained('google/vit-large-patch16-224')
+model = ViTForImageClassification.from_pretrained('google/vit-large-patch16-384')
 # Move the model to the device
 model = model.to(device)
 ```
@@ -358,9 +383,16 @@ We evaluate the model on the train and test splits to get the train and test acc
 
 ::: {.cell .code}
 ```python
+start_time = time.time()
 # Print the Performance of the Ready fine tuned model
-train_acc_imagenet = evaluate_on_test(model, loader["train_loader"], device)
 test_acc_imagenet = evaluate_on_test(model, loader["test_loader"], device)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
+# delete model to free gpu
+del model
+# Release unused memory
+torch.cuda.empty_cache()
 ```
 :::
 
@@ -372,20 +404,25 @@ We save the results for the **ImageNet** dataset in a dictionary to use later fo
 
 ::: {.cell .code}
 ```python
-# Create a dictionary to hold the results
-runs={}
+# Create dictionary runs
+runs = {}
+
+# Check if the file exists
+if os.path.exists("experiments/vit.json"):
+    # Open the file in read mode
+    with open("experiments/vit.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
 
 # Add the results to a dictionary
-runs["imagenet"] = { 'training_accuracy' : train_acc_imagenet,
-                       'test_accuracy' : test_acc_imagenet,
-                     }
+runs["imagenet"] = test_acc_imagenet                   
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/vit.json", "w") as f:
+with open("experiments/vit.json", "w") as f:
     json.dump(runs, f)
 ```
 :::
@@ -423,8 +460,12 @@ We fine tune the pretrained vision transformer on the **CIFAR-10** dataset to ge
 
 ::: {.cell .code}
 ```python
-# Fine tune the model on imagenet
+start_time = time.time()
+# Fine tune the model on CIFAR-10
 train_acc_cifar10, test_acc_cifar10 = train_vit_model(loaders=loader)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
 ```
 :::
 
@@ -436,17 +477,25 @@ We save the obtained results to use it later for the creating the results table.
 
 ::: {.cell .code}
 ```python
+# Create dictionary runs
+runs = {}
+
+# Check if the file exists
+if os.path.exists("experiments/vit.json"):
+    # Open the file in read mode
+    with open("experiments/vit.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
+
 # Add the results to a dictionary
-runs["cifar10"] = { 'training_accuracy' : train_acc_cifar10,
-                       'test_accuracy' : test_acc_cifar10,
-                     }
+runs["cifar10"] = test_acc_cifar10[-1]
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/vit.json", "w") as f:
+with open("experiments/vit.json", "w") as f:
     json.dump(runs, f)
 ```
 :::
@@ -484,8 +533,12 @@ Now we are ready to fine tune the model on the **CIFAR100** dataset.
 
 ::: {.cell .code}
 ```python
-# Fine tune the model on imagenet
+start_time = time.time()
+# Fine tune the model on CIFAR-100
 train_acc_cifar100, test_acc_cifar100 = train_vit_model(loaders=loader)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
 ```
 :::
 
@@ -497,17 +550,25 @@ We save the results in `runs` using the key `cifar100`.
 
 ::: {.cell .code}
 ```python
+# Create dictionary runs
+runs = {}
+
+# Check if the file exists
+if os.path.exists("experiments/vit.json"):
+    # Open the file in read mode
+    with open("experiments/vit.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
+
 # Add the results to a dictionary
-runs["cifar100"] = { 'training_accuracy' : train_acc_cifar100,
-                       'test_accuracy' : test_acc_cifar100,
-                     }
+runs["cifar100"] = test_acc_cifar100[-1]
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/vit.json", "w") as f:
+with open("experiments/vit.json", "w") as f:
     json.dump(runs, f)
 ```
 :::
@@ -545,8 +606,12 @@ We fine-tune the vision transformer on the dataset for 10 epochs.
 
 ::: {.cell .code}
 ```python
-# Fine tune the model on imagenet
+start_time = time.time()
+# Fine tune the model on Oxford-IIIT Pets
 train_acc_oxford_pets, test_acc_oxford_pets = train_vit_model(loaders=loader)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
 ```
 :::
 
@@ -558,17 +623,25 @@ We save the results in the `runs` dictionary as usual using the dataset name as 
 
 ::: {.cell .code}
 ```python
+# Create dictionary runs
+runs = {}
+
+# Check if the file exists
+if os.path.exists("experiments/vit.json"):
+    # Open the file in read mode
+    with open("experiments/vit.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
+
 # Add the results to a dictionary
-runs["oxford_pets"] = { 'training_accuracy' : train_acc_oxford_pets,
-                       'test_accuracy' : test_acc_oxford_pets,
-                     }
+runs["oxford_pets"] = test_acc_oxford_pets[-1]
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/vit.json", "w") as f:
+with open("experiments/vit.json", "w") as f:
     json.dump(runs, f)
 ```
 :::
@@ -626,8 +699,12 @@ We fine-tune the model using the `train_vit_model` function and using the `Flowe
 
 ::: {.cell .code}
 ```python
-# Fine tune the model on imagenet
-train_acc_oxford_flowers, test_acc_oxford_flowers = train_vit_model(loaders=loader)
+start_time = time.time()
+# Fine tune the model on Oxford Flowers-102
+train_acc_oxford_flowers, test_acc_oxford_flowers = train_vit_model(loaders=loader, epochs=14)
+# Calculate and print cell execution time
+end_time = time.time()
+print_time(start_time, end_time)
 ```
 :::
 
@@ -639,17 +716,25 @@ Now we save the fine-tuning results in the `runs` dictionary.
 
 ::: {.cell .code}
 ```python
+# Create dictionary runs
+runs = {}
+
+# Check if the file exists
+if os.path.exists("experiments/vit.json"):
+    # Open the file in read mode
+    with open("experiments/vit.json", "r") as f:
+        # Load the data from the file to runs
+        runs = json.load(f)
+
 # Add the results to a dictionary
-runs["oxford_flowers"] = { 'training_accuracy' : train_acc_oxford_flowers,
-                       'test_accuracy' : test_acc_oxford_flowers,
-                     }
+runs["oxford_flowers"] = test_acc_oxford_flowers[-1]
 ```
 :::
 
 ::: {.cell .code}
 ```python
 # Save the outputs in a json file
-with open("experiments/exp1/vit.json", "w") as f:
+with open("experiments/vit.json", "w") as f:
     json.dump(runs, f)
 ```
 :::

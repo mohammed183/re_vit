@@ -34,13 +34,12 @@ We need to create the dataloaders that will help us train our **ResNet** model. 
 
 ::: {.cell .code}
 ```python
-# The following dicts hold resize values
 known_dataset_sizes = {
   'cifar10': (128, 128),
   'cifar100': (128, 128),
-  'oxford_pets': (224, 224),
-  'flowers_102': (224, 224),
-  'imagenet': (224, 224),
+  'oxford_pets': (128, 128),
+  'flowers_102': (128, 128),
+  'imagenet': (384, 384),
 }
 
 def get_res_loaders(dataset="imagenet", batch_size=64):
@@ -54,11 +53,18 @@ def get_res_loaders(dataset="imagenet", batch_size=64):
     """
     # Get image size
     crop = known_dataset_sizes[dataset]
+    precrop = (160,160)
     # Normalization using channel means
     normalize_transform = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
     # Creating transform function
-    train_transform =transforms.Compose([transforms.Resize(crop), transforms.ToTensor(), normalize_transform])
+    train_transform = transforms.Compose([
+                        transforms.Resize(precrop),
+                        transforms.RandomCrop(crop),
+                        transforms.RandomHorizontalFlip(),
+                        transforms.ToTensor(),
+                        normalize_transform,
+                    ])
 
     # Test transformation function
     test_transform =transforms.Compose([transforms.Resize(crop), transforms.ToTensor(), normalize_transform])
@@ -323,6 +329,9 @@ def evaluate_on_test(model, test_loader, device):
 
         accuracies.append(batch_accuracy.item())
 
+        if batch_idx % 1000 == 0:
+            print(f"Mean accuracy at batch: {batch_idx} is {np.mean(accuracies) * 100}")
+
     test_accuracy = np.mean(accuracies) * 100
     print(f"Test accuracy: {test_accuracy}")
     return test_accuracy
@@ -350,7 +359,7 @@ The function first creates a ResNet model with the specified arguments and loads
 ```python
 # Function to train the model and return train and test accuracies
 def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x4",
-                       width_factor=4, lr=0.003, epochs=10, random_seed=42, save=False):
+                       width_factor=4, lr=0.0003, epochs=10, random_seed=42, save=False):
 
     # Create experiment directory name if none
     experiment_dir = os.path.join('experiments', title)
@@ -385,12 +394,8 @@ def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x
     # Create the optimizer
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
-    # Calculate per_step, authors used 512 batch size
+    # Calculate batch size
     batch_size = loaders["train_loader"].batch_size
-    per_step = int(512/batch_size)
-
-    # Create the scheduler with cosine learning rate decay
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs*per_step, verbose=True)
 
     # Create the loss function
     criterion = torch.nn.CrossEntropyLoss()
@@ -398,7 +403,6 @@ def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x
     # Arrays to hold accuracies
     test_acc = []
     train_acc = []
-    step = 0
     # Iterate over the number of epochs
     for epoch in range(1, epochs + 1):
         # Make model params trainable
@@ -425,15 +429,10 @@ def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x
             accuracies.append(batch_accuracy.item())
             losses.append(loss.item())
 
-            step+=1
-            # Check if time to change learning rate
-            if step % per_step == 0:
-                scheduler.step()
-
         # Store training accuracy for plotting
         train_loss = np.mean(losses)
-        train_accuracy = np.mean(accuracies)
-        train_acc.append(train_accuracy*100)
+        train_accuracy = np.mean(accuracies)*100
+        train_acc.append(train_accuracy)
 
         print("Train accuracy: {} Train loss: {}".format(train_accuracy, train_loss))
 
@@ -456,14 +455,14 @@ def train_res_model(loaders, title='', model_name='r152', bit_model="BiT-M-R152x
             losses.append(loss.item())
 
             # Break if there are more than 500 samples and not last iteration
-            if (batch_idx+1)*batch_size > 500 and epoch < epochs:
+            if (batch_idx+1)*batch_size > 200 and epoch < epochs:
                 break
 
         # Store test accuracy for plotting
         test_loss = np.mean(losses)
         test_accuracy = np.mean(accuracies)
         test_acc.append(test_accuracy*100)
-        print("Test accuracy: {} Test loss: {}".format(test_accuracy, test_loss))
+        print("Test accuracy: {} Test loss: {}".format(test_accuracy*100, test_loss))
 
 
     if save:
@@ -530,6 +529,18 @@ def plot_images_from_dataloader(dataloader):
 # Function used to load npz files
 def get_weights(bit_variant):
     return np.load(f'pretrained_models/{bit_variant}.npz')
+
+# Function used to calculated time
+def print_time(start_time, end_time):
+    # Calculate the difference in seconds
+    diff = end_time - start_time
+
+    # Convert the difference to hours, minutes, and seconds
+    hours, remainder = divmod(diff, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    # Print the time in hours:minutes:seconds format
+    print(f"Cell execution time: {int(hours)}:{int(minutes)}:{seconds}")
 ```
 :::
 
@@ -578,7 +589,7 @@ The first step is to load the dataset and choose the `batch_size` that suits our
 ::: {.cell .code}
 ```python
 # Plot some images from the ImageNet dataset
-loader = get_res_loaders(dataset="imagenet", batch_size=2)
+loader = get_res_loaders(dataset="imagenet", batch_size=1)
 plot_images_from_dataloader(loader["test_loader"])
 ```
 :::
@@ -834,7 +845,7 @@ We start again by loading and plotting the dataset. Make sure the batch size wri
 ::: {.cell .code}
 ```python
 # Plot some images from the Oxford-IIIT Pets dataset
-loader = get_res_loaders(dataset="oxford_pets", batch_size=4)
+loader = get_res_loaders(dataset="oxford_pets", batch_size=16)
 plot_images_from_dataloader(loader["train_loader"])
 ```
 :::
@@ -850,7 +861,7 @@ We fine-tune the model pretrained on `ImageNet-21k` on the `OxfordPets` dataset.
 ```python
 start_time = time.time()
 # Fine tune the model on Oxford-IIIT Pets
-train_acc_oxford_pets, test_acc_oxford_pets = train_res_model(loaders=loader)
+train_acc_oxford_pets, test_acc_oxford_pets = train_res_model(loaders=loader, lr=0.0001)
 # Calculate and print cell execution time
 end_time = time.time()
 print_time(start_time, end_time)
@@ -909,7 +920,7 @@ The PyTorch dataset for this dataset does not contain the class labels, so we cr
 ::: {.cell .code}
 ```python
 # Plot some images from the Oxford Flowers-102 Pets dataset
-loader = get_res_loaders(dataset="flowers_102", batch_size=4)
+loader = get_res_loaders(dataset="flowers_102", batch_size=16)
 
 # We initialize the flowers names as they are not on Pytorch (used for plotting)
 flower_classes = ['pink primrose', 'hard-leaved pocket orchid', 'canterbury bells', 'sweet pea',
@@ -945,7 +956,7 @@ We fine-tune the model on the dataset and obtain the train and test accuracies a
 ```python
 start_time = time.time()
 # Fine tune the model on Oxford Flowers-102
-train_acc_oxford_flowers, test_acc_oxford_flowers = train_res_model(loader, epochs=10)
+train_acc_oxford_flowers, test_acc_oxford_flowers = train_res_model(loader, epochs=14, lr=0.0001)
 # Calculate and print cell execution time
 end_time = time.time()
 print_time(start_time, end_time)
