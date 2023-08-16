@@ -12,13 +12,21 @@ The notebook will guide the students through the following steps:
 - Compare their results with the original paper and other baselines
 - Evaluate the reproducibility of the research
 
-The notebook will use Python and JAX as the main tools and will require some basic knowledge of computer vision and neural networks.
+The notebook will use Python and PyTorch as the main tools and will require some basic knowledge of computer vision and neural networks.
 
 ## Installation
 
 To run the notebook, you will need to install the following dependencies:
 
-- To be determined
+- Python 3.6 or higher
+- PyTorch 1.7 or higher
+- NumPy
+- Matplotlib
+- Jupyter Notebook or Jupyter Lab
+- torch
+- torchvision
+- transformers
+- gdown
 
 You can install them using pip or conda, for example:
 
