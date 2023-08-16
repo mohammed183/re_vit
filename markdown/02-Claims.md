@@ -89,6 +89,7 @@ The authors support their claim by pretraining three versions of the vision tran
 
 The following figure shows the breakdown of the VTAB tasks:
 ![](assets/claim1.png)
+
 *<small>The models used are not available to the public and cannot be reproduced, as they are trained on the JFT-300M dataset, which is a private dataset owned by Google.</small>*
 
 To test the claim that vision transformers outperform convolutional neural networks on image classification tasks, we need to fine-tune the pretrained models on various datasets and compare their test accuracy. However, we face a challenge: we cannot access the pretrained models or the **JFT-300M** dataset that the authors used for pretraining. This is a private dataset that only they have. The only model we can use from the previous table is the **Vit-L/16(I21k)**, which is marked in green. This model was pretrained on the **ImageNet-21k(I21k)** dataset and released by Google.

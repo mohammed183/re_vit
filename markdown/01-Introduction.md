@@ -39,7 +39,10 @@ The paper *"An Image is Worth 16x16 Words: Transformers for Image Recognition at
 
 | ![](assets/ViT.png)       |
 |:------------------------- |
-| *The figure illustrates process of image classification using a transformer encoder. First, the image is divided into patches of equal size. Then, each patch is converted into a vector by a linear projection. Next, position embeddings are added to the patch vectors to preserve their spatial information. Finally, the sequence of patch vectors is fed into a standard transformer encoder to produce the image representation.* |
+| *The figure illustrates process of image classification using a transformer encoder.* |
+| *First, the image is divided into patches of equal size. Then, each patch is converted into a vector by a linear projection.* |
+| *Next, position embeddings are added to the patch vectors to preserve their spatial information.* |
+| *Finally, the sequence of patch vectors is fed into a standard transformer encoder to produce the image representation.* |
 
 ***
 :::
