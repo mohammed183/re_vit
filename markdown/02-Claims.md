@@ -1,7 +1,7 @@
 ::: {.cell .markdown}
 # Primary Claims
 
-The paper assesses the performance of the **ResNet**, **ViT** and **hybrid** models on various image classification tasks, and makes some claims based on the assessment. In this section, we present these claims and propose a way to test them using the pre-trained models that the authors have provided.The table below shows the different variants of the models that the authors use. The authors also use a notation to refer to the models, such as *ViT-L/16*, which means the “Large” variant with an input patch size of 16 × 16. They also use an improved ResNet as the baseline model and refer to it as [*"ResNet (BiT)"*](https://arxiv.org/abs/1912.11370) which has published models on this [repo](https://github.com/google-research/big_transfer).
+The paper assesses the performance of the **ResNet**, **ViT** and **hybrid** models on various image classification tasks, and makes some claims based on the assessment. In this section, we present these claims and propose a way to test them using the **pre-trained** models that the authors have provided.The table below shows the different variants of the models that the authors use. The authors also use a notation to refer to the models, such as *ViT-L/16*, which means the “Large” variant with an input patch size of 16 × 16. They also use an improved ResNet as the baseline model and refer to it as [*"ResNet (BiT)"*](https://arxiv.org/abs/1912.11370) which has published models on this [GitHub](https://github.com/google-research/big_transfer).
 
 | Model     | Layers | Hidden size D | MLP size | Heads | Params |
 | :-------: | :----: | :-----------: | :------: | :---: | :----: |
@@ -92,7 +92,7 @@ The following figure shows the breakdown of the VTAB tasks:
 
 *<small>The models used are not available to the public and cannot be reproduced, as they are trained on the JFT-300M dataset, which is a private dataset owned by Google.</small>*
 
-To test the claim that vision transformers outperform convolutional neural networks on image classification tasks, we need to fine-tune the pretrained models on various datasets and compare their test accuracy. However, we face a challenge: we cannot access the pretrained models or the **JFT-300M** dataset that the authors used for pretraining. This is a private dataset that only they have. The only model we can use from the previous table is the **Vit-L/16(I21k)**, which is marked in green. This model was pretrained on the **ImageNet-21k(I21k)** dataset and released by Google.
+To test the claim that vision transformers outperform convolutional neural networks on image classification tasks, we need to fine-tune the pretrained models on various datasets and compare their test accuracy. However, we face a challenge: we cannot access the pretrained models or the **JFT-300M** dataset that the authors used for pretraining. This is a private dataset that only they have. The only model we can use from the previous table is the **Vit-L/16 (I21k)**, which is marked in green. This model was pretrained on the **ImageNet-21k (I21k)** dataset and released by Google.
 
 **How can we overcome this challenge and verify their claim?**
 
@@ -138,7 +138,7 @@ A possible solution is to use other published models that were also pretrained o
 ::: {.cell .markdown}
 ## Claim 2: The performance of the Vision Transformer on the classification task after fine tuning improves with the increase of the pretraining dataset size
 
-The authors claim that their Vision Transformer models can learn more effectively from larger datasets than conventional CNNs, which enhances their performance on downstream tasks. This means that the vision transformer can transfer the knowledge learned from previous datasets to new ones more effectively than the ResNet models.
+The authors claim that their **Vision Transformer** models can learn more effectively from larger datasets than conventional **CNNs**, which enhances their performance on downstream tasks. This means that the vision transformer can transfer the knowledge learned from previous datasets to new ones more effectively than the **ResNet** models.
 
 To demonstrate their claim, the authors compared the ResNet models and the vision transformer models that were pretrained on three different datasets: **ImageNet**, **ImageNet-21k** and **JFT-300M**. They then fine-tuned the models on the ImageNet dataset for classification. The figure below shows how the pretraining dataset size affects the test accuracy of the models.
 
@@ -330,7 +330,9 @@ Model pretrained on the **JFT-300M** dataset:
 	</tr>
 </table>
 
-We want to test the qualitative claim by fine tuning the pretrained models to classify images in the ImageNet dataset as the authors did and examine how the size of each pretraining dataset influences the final test accuracy. However, we cannot verify the results of the **JFT-300M** pretrained models as they are not publicly available.
+
+
+We want to test the qualitative claim by fine-tuning the pretrained models to classify images in the ImageNet dataset as the authors did and examine how the size of each pretraining dataset influences the final test accuracy. However, we cannot verify the results of the **JFT-300M** pretrained models as they are not publicly available.
 
 We can only test the quantitative claims for the models pretrained on **ImageNet-21k**, since the models and dataset for **JFT-300M** are not accessible to the public. The models pretrained on **ImageNet-1k** are available, but they use a different optimizer (SAM) than the one described in the paper. This means that we might get similar results, but not exactly the same as the paper.
 
@@ -571,13 +573,15 @@ The **hybrid models** results:
 
 We are unable to verify the quantitative results of the previous claim because we do not have access to the pretrained models or the **JFT-300M** dataset, which is a private dataset that the authors used for pretraining.
 
-We want to test the claim that the vision transformer models can outperform the CNN models on different classification tasks. However, we do not have the models or the data that the authors used for pretraining. To address this issue, we will use the models that the authors pretrained on the **ImageNet-21k** dataset, which is a public dataset. We will fine-tune these models on various classification tasks, such as CIFAR-10, CIFAR-100, Pets, and Flowers. Then, we will compare the test accuracy of each type of model: pure vision transformer, pure CNN, and hybrid vision transformer.
+We want to test the claim that the **hybrid vision transformer** models can outperform both the **CNN** and **vision transformer** models on different classification tasks. However, we do not have the models or the data that the authors used for pretraining. To address this issue, we will use the models that the authors pretrained on the **ImageNet-21k** dataset, which is a public dataset. We will fine-tune these models on various classification tasks, such as CIFAR-10, CIFAR-100, Pets, and Flowers. Then, we will compare the test accuracy of each type of model: pure vision transformer, pure CNN, and hybrid vision transformer.
 
 ***
 :::
 
 ::: {.cell .markdown}
 **Note: There are other claims about the computational improvement of the vision transformer model compared to the traditional CNNs that achieve similar results. We will not address any of these claims due to their high computational cost. Moreover, some of these results are not reproducible because of the unavailability of the JFT-300M dataset.**
+
+**Can you identify one of these claims and provide the experiment they did to support their claim? 🧐**
 
 ***
 :::

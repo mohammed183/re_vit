@@ -7,6 +7,25 @@ In this section, we will attempt to verify the qualitative and quantitative aspe
 :::
 
 ::: {.cell .markdown}
+Before starting any of the experiments, we need to download the **ImageNet-1k** validation data to be able to use to verify the results on the **ImageNet-1k** dataset as it is *not available* in `torchvision.datasets`.
+
+***
+:::
+
+::: {.cell .code}
+```python
+# Download ImageNet-1k validation dataset
+!gdown 1xAO6pGcJqvTtbwcdlVWlcNSDjLkHZtnA
+!unzip val.zip
+```
+:::
+
+::: {.cell .markdown}
+
+***
+:::
+
+::: {.cell .markdown}
 ## Experiment 1:
 
 In this experiment we want to reproduce the claim: *"Vision Transformer outperforms state of the art CNNs on various classification tasks after pretraining on large datasets"* by using the only available pretrained model in the table in that claim and compare it to the other model that are pretrained on the **ImageNet-21k** unlike in the original paper where the other models were trained on the **JFT-300M** private dataset.
@@ -56,8 +75,23 @@ display(df.style.set_properties(**{'text-align': 'center', 'border': '1px solid 
 :::
 
 ::: {.cell .markdown}
+
 ***
 :::
+
+::: {.cell .markdown}
+### Things to try: 🧪
+
+This experiment uses a specific model and optimizer. Exploring different combinations might be beneficial but costly in terms of computation. A simple way to further examine the first claim is:
+
+-   Use a lower learning rate since the model achieves 99% training accuracy quickly
+-   Use number of epochs at which validation accuracies of both models are maximized
+-   Check the sensitivity of the model to the random seed by changing it
+
+***
+:::
+
+
 
 ::: {.cell .markdown}
 # Optional
@@ -160,6 +194,7 @@ The models available for this experiment are:
 | R50x1+ViT-L/16 | No                  | Yes                    |
 
 We can use any of these model and compare it to the results from the previous experiments to validate the qualitative version of the claim. However, we cannot validata the quantitative results as the models pretrained on the **JFT-300M** dataset are not available.
+
 ***
 :::
 
