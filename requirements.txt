@@ -9,3 +9,4 @@ jupyter-client==6.1.12
 jupyter-console==6.1.0
 jupyter-core==4.11.2
 jupyterlab-widgets==3.0.3
+scipy==1.10.1

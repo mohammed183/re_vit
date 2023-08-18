@@ -7,7 +7,19 @@ In this section, we will attempt to verify the qualitative and quantitative aspe
 :::
 
 ::: {.cell .markdown}
-Before starting any of the experiments, we need to download the **ImageNet-1k** validation data to be able to use to verify the results on the **ImageNet-1k** dataset as it is *not available* in `torchvision.datasets`.
+Before we dive into the experiments, let's briefly discuss some of the common challenges that we will encounter in each of them. We will elaborate on these challenges later in the corresponding notebooks, but for now, here are some of the main issues that you should be aware of:
+
+- The models are **very large and memory-intensive**, requiring a GPU with at least 16GB of RAM for the ViT models and at least 24GB of RAM for the ResNet models.
+- The authors used a **very large batch size and a huge number of steps**, which can be very costly to reproduce.
+- The resolutions reported in the paper are **not consistent with the ones provided in the code**.
+- The fine-tuning learning rate for each dataset is **not reported in the paper**, but only the values used for grid search are given.
+- The learning rate scheduler used in the code is **different from the one described in the paper**.
+
+***
+:::
+
+::: {.cell .markdown}
+Before starting any of the experiments, we need to download the **ImageNet-1k** validation data to be able to verify the results on the **ImageNet-1k** dataset as it is *not available* in `torchvision.datasets`.
 
 ***
 :::
@@ -36,9 +48,9 @@ In this experiment we want to reproduce the claim: *"Vision Transformer outperfo
 ::: {.cell .markdown}
 This Experiment is split into two notebooks:
 
-- [ResNet notebook](ResNet.ipynb): This notebook allows us to evaluate the performance of different ResNet models on various image classification datasets. The model names can be changed to try different models. The models in this notebook are pretrained on the ImageNet-21k dataset and are ready for fine-tuning.
+- [ResNet notebook](ResNet.ipynb): This notebook allows us to evaluate the performance of different **ResNet** models on various image classification datasets. The `model name` can be changed to try different models. The models in this notebook are pretrained on the **ImageNet-21k** dataset and are ready for fine-tuning.
 
-- [ViT notebook](ViT.ipynb): This notebook allows us to evaluate the performance of different Vision Transformer (ViT) models on various image classification datasets. The model names can be changed to try different models. The models in this notebook are pretrained on the ImageNet-21k dataset and are ready for fine-tuning.
+- [ViT notebook](ViT.ipynb): This notebook allows us to evaluate the performance of different **Vision Transformer (ViT)** models on various image classification datasets. The `model name` can be changed to try different models. The models in this notebook are pretrained on the **ImageNet-21k** dataset and are ready for fine-tuning.
 
 ***
 :::
@@ -82,11 +94,14 @@ display(df.style.set_properties(**{'text-align': 'center', 'border': '1px solid 
 ::: {.cell .markdown}
 ### Things to try: 🧪
 
-This experiment uses a specific model and optimizer. Exploring different combinations might be beneficial but costly in terms of computation. A simple way to further examine the first claim is:
+We have experimented with some fine-tuning hyperparameters that yielded good results, but we can explore more and try to improve the performance of the models. For example, we can try:
 
--   Use a lower learning rate since the model achieves 99% training accuracy quickly
--   Use number of epochs at which validation accuracies of both models are maximized
--   Check the sensitivity of the model to the random seed by changing it
+-   Using **different learning rates** to see how sensitive the models are to this hyperparameter. A learning rate that is too high or too low can affect the convergence and accuracy of the models.
+-   Changing the **number of epochs** to see how it affects the final results. More epochs might lead to better results, but also increase the risk of overfitting or underfitting.
+-   Checking the **sensitivity of the model to the random seed** by changing it. The random seed can influence the initialization of the weights, the shuffling of the data, and the dropout rate. Different seeds might result in different outcomes for the same model and dataset.
+
+
+The [**ConvNeXt**](https://arxiv.org/abs/2201.03545) paper was proposed after the **Vision Transformer (ViT)** model, which uses self-attention to process images. **ConvNeXt** combines the advantages of *ConvNets and self-supervised learning techniques*, such as masked autoencoders, to achieve better results than ViT. You can try to find the code and verify that these **CNNs** are actually able to get better results than ViT. You can use the [**ConvNeXt Code**](https://github.com/facebookresearch/ConvNeXt) from the official github.
 
 ***
 :::
