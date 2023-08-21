@@ -82,7 +82,8 @@ overall['ViT-L/16'] = vit
 df = pd.DataFrame.from_dict(overall).T
 
 # Display the dataframe
-display(df.style.set_properties(**{'text-align': 'center', 'border': '1px solid black', 'padding': '5px'}))
+display(df.style.set_properties(**{'text-align': 'center', 'border': '2px solid black', 'padding': '10px',\
+                                   'font-size': '15px'}))
 ```
 :::
 
@@ -128,7 +129,7 @@ In this experiment we want to verify the claim that states that *"The performanc
 ::: {.cell .markdown}
 The models available for this experiment are:
 
-| Model          | Pretrained ImageNet | pretrained ImageNet-21 |
+| Model          | Pretrained ImageNet | pretrained ImageNet-21k |
 | :------------: | :-----------------: | :--------------------: |
 | ResNet50x1     | Yes                 | Yes                    |
 | ResNet101x1    | Yes                 | Yes                    |
@@ -183,7 +184,8 @@ for name in file_names:
 df = pd.DataFrame.from_dict(overall).T
 
 # Display the dataframe
-display(df.style.set_properties(**{'text-align': 'center', 'border': '1px solid black', 'padding': '5px'}))
+display(df.style.set_properties(**{'text-align': 'center', 'border': '2px solid black', 'padding': '10px',\
+                                   'font-size': '15px'}))
 ```
 :::
 
@@ -200,13 +202,11 @@ In this experiment we want to verify the claim that states that "The hybrid Visi
 :::
 
 ::: {.cell .markdown}
-The models available for this experiment are:
+The models available for this experiment are all pretrained on the **ImageNet-21k** datasets:
 
-| Model          | Pretrained ImageNet | pretrained ImageNet-21 |
-| :------------: | :-----------------: | :--------------------: |
-| R50x1+ViT-B/16 | Yes                 | Yes                    |
-| R50x1+ViT-L/32 | No                  | Yes                    |
-| R50x1+ViT-L/16 | No                  | Yes                    |
+-  R50x1+ViT-B/16 
+-  R50x1+ViT-L/32
+-  R50x1+ViT-L/16
 
 We can use any of these model and compare it to the results from the previous experiments to validate the qualitative version of the claim. However, we cannot validata the quantitative results as the models pretrained on the **JFT-300M** dataset are not available.
 
@@ -246,6 +246,7 @@ for name in file_names:
 df = pd.DataFrame.from_dict(overall).T
 
 # Display the dataframe
-display(df.style.set_properties(**{'text-align': 'center', 'border': '1px solid black', 'padding': '5px'}))
+display(df.style.set_properties(**{'text-align': 'center', 'border': '2px solid black', 'padding': '10px',\
+                                   'font-size': '15px'}))
 ```
 :::
