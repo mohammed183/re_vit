@@ -40,7 +40,7 @@ Before starting any of the experiments, we need to download the **ImageNet-1k** 
 ::: {.cell .markdown}
 ## Experiment 1:
 
-In this experiment we want to reproduce the claim: *"Vision Transformer outperforms state of the art CNNs on various classification tasks after pretraining on large datasets"* by using the only available pretrained model in the table in that claim and compare it to the other model that are pretrained on the **ImageNet-21k** unlike in the original paper where the other models were trained on the **JFT-300M** private dataset.
+In this experiment we want to reproduce the claim: *"Vision Transformer outperforms state of the art CNNs on various classification tasks after pretraining on large datasets"* by using the only available pretrained model in the table in that claim and compare it to the other model that are pretrained on the **ImageNet-21k** unlike in the original paper where the other models were pretrained on the **JFT-300M** private dataset.
 
 ***
 :::
@@ -48,7 +48,7 @@ In this experiment we want to reproduce the claim: *"Vision Transformer outperfo
 ::: {.cell .markdown}
 This Experiment is split into two notebooks:
 
-- [ResNet notebook](ResNet.ipynb): This notebook allows us to evaluate the performance of different **ResNet** models on various image classification datasets. The `model name` can be changed to try different models. The models in this notebook are pretrained on the **ImageNet-21k** dataset and are ready for fine-tuning.
+- [ResNet notebook](ResNet.ipynb): This notebook allows us to evaluate the performance of different **ResNet** models on various image classification datasets. The `model name` can be changed to try different models. The models in this notebook used for this experiment are pretrained on the **ImageNet-21k** dataset and are ready for fine-tuning.
 
 - [ViT notebook](ViT.ipynb): This notebook allows us to evaluate the performance of different **Vision Transformer (ViT)** models on various image classification datasets. The `model name` can be changed to try different models. The models in this notebook are pretrained on the **ImageNet-21k** dataset and are ready for fine-tuning.
 
@@ -98,11 +98,11 @@ display(df.style.set_properties(**{'text-align': 'center', 'border': '2px solid 
 We have experimented with some fine-tuning hyperparameters that yielded good results, but we can explore more and try to improve the performance of the models. For example, we can try:
 
 -   Using **different learning rates** to see how sensitive the models are to this hyperparameter. A learning rate that is too high or too low can affect the convergence and accuracy of the models.
--   Changing the **number of epochs** to see how it affects the final results. More epochs might lead to better results, but also increase the risk of overfitting or underfitting.
--   Checking the **sensitivity of the model to the random seed** by changing it. The random seed can influence the initialization of the weights, the shuffling of the data, and the dropout rate. Different seeds might result in different outcomes for the same model and dataset.
+-   Changing the **number of epochs** to see how it affects the final results. Changing the number of epochs might lead to better results, but also increase the risk of overfitting or underfitting.
+-   Checking the **sensitivity of the model to the random seed** by changing it. The random seed can influence the initialization of the weights and the shuffling of the data. Different seeds might result in different outcomes for the same model and dataset.
 
 
-The [**ConvNeXt**](https://arxiv.org/abs/2201.03545) paper was proposed after the **Vision Transformer (ViT)** model, which uses self-attention to process images. **ConvNeXt** combines the advantages of *ConvNets and self-supervised learning techniques*, such as masked autoencoders, to achieve better results than ViT. You can try to find the code and verify that these **CNNs** are actually able to get better results than ViT. You can use the [**ConvNeXt Code**](https://github.com/facebookresearch/ConvNeXt) from the official github.
+The [**ConvNeXt**](https://arxiv.org/abs/2201.03545) paper was proposed after the **Vision Transformer (ViT)** model, which uses self-attention to process images. **ConvNeXt** combines the advantages of *ConvNets and self-supervised learning techniques*, such as masked autoencoders, to achieve better results than ViT. You can try to find the code and verify that these **CNNs** are actually able to get better results than ViT. You can use the [**ConvNeXt Code**](https://github.com/facebookresearch/ConvNeXt) from the official github which contains this [notebook](https://colab.research.google.com/drive/1CBYTIZ4tBMsVL5cqu9N_-Q3TBprqsfEO?usp=sharing) where you can test the model.
 
 ***
 :::
@@ -143,6 +143,7 @@ The models available for this experiment are:
 We already have the results for the **ResNet-152x4** and **ViT-L/16** pretrained on the **ImageNet-21k**.
 
 Notice that the vision transformers pretrained on the **ImageNet-1k** use a different optimizer than described in the paper which will prevent us from validating the quantitative results of this claim. Moreover, these models are only compatible with the **JAX** framework, not with **PyTorch**. Therefore, we need to use **JAX** to load and use these models. To test the qualitative claim, we can choose any two models per dataset and compare their performance.
+
 ***
 :::
 

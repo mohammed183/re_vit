@@ -12,7 +12,7 @@ The paper assesses the performance of the **ResNet**, **ViT** and **hybrid** mod
 
 We want to **evaluate** the **claims** made by the **vision transformer paper**, both **qualitatively and quantitatively**. However, we face some **difficulties** in doing so. First, some of the **pretrained models** that the authors used are **not publicly available**. Second, we do not have enough **computational resources** to train the models from scratch. Third, some of the **datasets** that the authors used for pretraining are **private and inaccessible**. Therefore, we cannot **reproduce all the results** of the paper.
 
-**How do you think we can deal with the previous problems?**
+**How do you think we can deal with the previous problems?** 🤔
 
 ***
 :::
@@ -90,11 +90,11 @@ The authors support their claim by pretraining three versions of the vision tran
 The following figure shows the breakdown of the VTAB tasks:
 ![](assets/claim1.png)
 
-*<small>The models used are not available to the public and cannot be reproduced, as they are trained on the JFT-300M dataset, which is a private dataset owned by Google.</small>*
+<small>The models used are not available to the public and cannot be reproduced, as they are trained on the JFT-300M dataset, which is a private dataset owned by Google.</small>
 
 To test the claim that vision transformers outperform convolutional neural networks on image classification tasks, we need to fine-tune the pretrained models on various datasets and compare their test accuracy. However, we face a challenge: we cannot access the pretrained models or the **JFT-300M** dataset that the authors used for pretraining. This is a private dataset that only they have. The only model we can use from the previous table is the **Vit-L/16 (I21k)**, which is marked in green. This model was pretrained on the **ImageNet-21k (I21k)** dataset and released by Google.
 
-**How can we overcome this challenge and verify their claim?**
+**How can we overcome this challenge and verify their claim**⁉️
 
 A possible solution is to use other published models that were also pretrained on the **ImageNet-21k** dataset, such as the **BiT-L (I21k)** model. We can fine-tune these models on the same classification datasets as the vision transformer model and compare their performance. We can create a table like the following and fill the missing parts:
 
@@ -143,7 +143,7 @@ The authors claim that their **Vision Transformer** models can learn more effect
 To demonstrate their claim, the authors compared the ResNet models and the vision transformer models that were pretrained on three different datasets: **ImageNet**, **ImageNet-21k** and **JFT-300M**. They then fine-tuned the models on the ImageNet dataset for classification. The figure below shows how the pretraining dataset size affects the test accuracy of the models.
 
 ![](assets/claim2.png)
-*<small>The models pretrained on ImageNet and ImageNet-21k are available, but the models pretrained on the JFT-300M dataset were not published</small>*
+
 
 To evaluate the performance of the vision transformer model, the author fine-tuned it on various datasets and presented the results in the tables below. The pretrained models that are marked in green are publicly available.
 
@@ -342,7 +342,7 @@ We can only test the quantitative claims for the models pretrained on **ImageNet
 ::: {.cell .markdown}
 ## Claim 3: The hybrid Vision Transformer can perform better than both baseline and Vision Transformer after fine tuning it to different classification task
 
-The authors propose a hybrid vision transformer that combines a ResNet backbone with a vision transformer, and claim that this model outperforms both the pure vision transformer and the pure CNN models. They argue that the ResNet layer provides a better feature representation for the transformer, enabling it to learn more information from the images.
+The authors propose a **hybrid vision transformer** that combines a **ResNet** backbone with a **vision transformer**, and claim that this model outperforms both the *pure vision transformer* and the pure *CNN* models. They argue that the ResNet layer provides a better feature representation for the transformer, enabling it to learn more information from the images.
 
 To support their claim, the authors conduct various experiments using different models pretrained on the **JFT-300M** dataset and then fine-tuned on classification tasks on different datasets. They also vary the number of epochs as a hyperparameter and test the sensitivity of their results to this factor. The tables below show the results they obtained for each type of model.
 

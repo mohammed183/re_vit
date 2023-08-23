@@ -50,7 +50,7 @@ The paper *"An Image is Worth 16x16 Words: Transformers for Image Recognition at
 :::
 
 ::: {.cell .markdown}
-The authors show that **ViT** can achieve *state-of-the-art* results on image classification tasks, while requiring much less computational resources to train than **CNNs**. They also demonstrate that the key factor for the success of **ViT**is the scale of the pre-training dataset. When pre-trained on large-scale image datasets, such as **ImageNet-21k** or **JFT-300M**, and then fine-tuned on smaller downstream datasets, **ViT** attains significant improvements over previous models. The authors also conduct extensive experiments to analyze the properties and behaviors of **ViT**, such as its attention patterns, transferability, and robustness.
+The authors show that **ViT** can achieve *state-of-the-art* results on image classification tasks, while requiring much less computational resources to train than **CNNs**. They also demonstrate that the key factor for the success of **ViT** is the scale of the pre-training dataset. When pre-trained on large-scale image datasets, such as **ImageNet-21k** or **JFT-300M**, and then fine-tuned on smaller downstream datasets, **ViT** attains significant improvements over previous models. The authors also conduct extensive experiments to analyze the properties and behaviors of **ViT**, such as its attention patterns, transferability, and robustness.
 
 ***
 :::
