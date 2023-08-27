@@ -14,9 +14,11 @@ The notebook will guide the students through the following steps:
 
 The notebook will use Python and PyTorch as the main tools and will require some basic knowledge of computer vision and neural networks.
 
+Here's a revised version of the text:
+
 ## Installation
 
-To run the notebook, you will need to install the following dependencies:
+To run the notebook, you'll need to install the following dependencies:
 
 - Python 3.6 or higher
 - PyTorch 1.7 or higher
@@ -28,36 +30,49 @@ To run the notebook, you will need to install the following dependencies:
 - transformers
 - gdown
 
-You can install them using pip or conda, for example:
+There are three options for installing and running the notebook:
 
-```
-pip install -r requirements.txt
-```
+### Option 1: Run Locally on Your Device
 
-or
+To run the notebook locally on your device, you'll need to install Python and Jupyter Notebook. Once you have those installed, follow these steps:
 
+1. Clone the repository and navigate to the `re_vit` directory by running the following command:
 ```
-conda install --file requirements.txt
-```
-or to avoid being prompt for yes for every package
-```
-conda install --yes --file requirements.txt
+$ git clone https://github.com/mohammed183/re_vit.git && cd re_vit
 ```
 
-## Usage
-
-To run the notebook, you can clone this repository and launch Jupyter notebook from the project directory:
-
+2. Install the required packages by running this command:
 ```
-git clone https://github.com/ucsc-ospo/re_vit.git
-cd re_vit
-make
-jupyter notebook
+$ pip install --user -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu113
 ```
 
-Then, open the notebook file `Start_Here.ipynb` in the notebooks folder and follow the instructions.
+3. Launch Jupyter Notebook by running this command:
+```
+$ jupyter notebook
+```
 
-Alternatively, you can use Google Colab to run the notebook online without installing anything. Just click on this link: <a target="_blank" href="https://colab.research.google.com/github/mohammed183/re_vit/blob/main/Start_Here.ipynb">
+4. In Jupyter Notebook, open the `Start_Here.ipynb` file located in the `notebooks` folder and follow the instructions.
+
+Please note that you will need a 24GB GPU to run the ResNet notebook.
+
+### Option 2: Run on Chameleon Cloud
+
+You can run the notebook on Chameleon Cloud using either a Colab frontend or a Jupyter Lab frontend. To do this, follow these steps:
+
+1. Clone the repository on the Jupyter interface for Chameleon Cloud by running the following command:
+```
+$ git clone https://github.com/mohammed183/re_vit.git && cd re_vit
+```
+
+2. Open the `Reserve.ipynb` notebook, which is available in the `re_vit` directory.
+
+3. Follow the steps in the `Reserve.ipynb` notebook to reserve an instance on Chameleon Cloud and run it with your desired frontend.
+
+Given the high resource requirements for the experiments in the notebooks, this option is likely to be the most suitable.
+
+### Option 3: Run on Google Colab
+
+You can also run the notebook on Google Colab. However, please note that the `ResNet.ipynb` notebook requires a high amount of GPU memory (24GB), which may not be available with a free Colab account. To open the `Start_Here.ipynb` file on Colab and navigate through the notebooks, click this button: <a target="_blank" href="https://colab.research.google.com/github/mohammed183/re_vit/blob/main/Start_Here.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
