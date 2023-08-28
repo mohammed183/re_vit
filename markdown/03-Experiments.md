@@ -32,14 +32,59 @@ The following is a subset of table 4 from the paper which includes some of the v
 ::: {.cell .markdown}
 Before starting any of the experiments, we need to download the **ImageNet-1k** validation data to be able to verify the results on the **ImageNet-1k** dataset as it is *not available* in `torchvision.datasets`.
 
-***
+To access the dataset, you will need a **Hugging Face** account with an access token. You can obtain an access token by following this [tutorial](https://huggingface.co/docs/hub/security-tokens). Once you have an access token, visit the [dataset page](https://huggingface.co/datasets/imagenet-1k), read and accept the terms and conditions, and then run the following cells. Please note that the process may take 10 or more minutes to complete, depending on your internet connection.
+
+**🛑 To avoid getting errors, wait for each cell to finish before running the next cell**
 :::
 
 ::: {.cell .code}
 ```python
-# Download ImageNet-1k validation dataset
-!gdown 1xAO6pGcJqvTtbwcdlVWlcNSDjLkHZtnA
-!unzip val.zip
+# Login to hugging face using the token you created
+from huggingface_hub import login
+login()
+```
+:::
+
+::: {.cell .code}
+```python
+# Download the dataset from hugging face
+from huggingface_hub import hf_hub_download
+hf_hub_download(repo_id="imagenet-1k", filename="data/val_images.tar.gz", repo_type="dataset")
+```
+:::
+
+::: {.cell .markdown}
+The output of the previous cell contains a path. Please copy this path and paste it into the `path` variable in the next cell which will prepare the validation data to be used.
+:::
+
+::: {.cell .code}
+```python
+# Path to dataset file
+path = ''
+
+# Move the path to current directory
+!cp "$path" val_images.tar.gz
+```
+:::
+
+::: {.cell .code}
+```python
+# Create the data/imagenet/val directory and extract the contents of val_images.tar.gz into it
+!mkdir -p data/imagenet/val && tar -xzf val_images.tar.gz -C data/imagenet/val
+```
+:::
+
+::: {.cell .code}
+```python
+# Download and run the valprep.sh script from the mohammed183/re_vit repository
+!cd data/imagenet/val && wget -qO- https://raw.githubusercontent.com/mohammed183/re_vit/main/imagenet_prep.sh | bash
+```
+:::
+
+::: {.cell .code}
+```python
+# Remove val_images.tar.gz, you can remove from path using rm "$path"
+!rm val_images.tar.gz
 ```
 :::
 

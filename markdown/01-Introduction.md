@@ -1,5 +1,5 @@
 ::: {.cell .markdown}
-# An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale 🎞️
+# An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale
 
 In this sequence of notebooks we try to reproduce the results of Dosovitskiy et al.‘s 2020 paper, “An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale”. [arXiv preprint arXiv:2010.11929](https://arxiv.org/abs/2010.11929). To create the interactive content for this notebook, we used the model checkpoints available on the authors’ [official repository](https://github.com/google-research/vision_transformer#vision-transformer-and-mlp-mixer-architectures).
 
@@ -37,7 +37,7 @@ The objective of this notebook is to show you how to:
 ::: {.cell .markdown}
 # Introduction 📢
 
-In the paper "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale," Dosovitskiy et al. present an innovative approach to applying the transformer architecture to computer vision tasks. Originally designed for natural language processing, the transformer architecture is a type of neural network that uses a parallel multi-head attention mechanism to process sequential data. Introduced in the 2017 paper [“Attention Is All You Need” by Vaswani et al.](https://arxiv.org/abs/1706.03762), it has since become widely used in natural language processing tasks.
+In the paper “An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale” by Dosovitskiy et al. present an innovative approach to applying the transformer architecture to computer vision tasks. Originally designed for natural language processing, the transformer architecture is a type of neural network that uses a parallel multi-head attention mechanism to process sequential data. Introduced in the 2017 paper [“Attention Is All You Need” by Vaswani et al.](https://arxiv.org/abs/1706.03762), it has since become widely used in natural language processing tasks.
 
 ***
 :::
