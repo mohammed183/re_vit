@@ -1,5 +1,5 @@
 ::: {.cell .markdown}
-# (Optional) Going Further
+# (Optional) Going Further 🚶
 At this point we acheived our goals that was introduced in the first section of this material. The following experiments will verify the rest of the claims introduced in the claims section. You can try to validate these claims by following the steps described. However, it will not be as easy as the previous part as you will need to solve some of the challenges that was explained in the previous experiment yourself this time (eg. finding the learning rate, deciding which models to use, etc).
 :::
 

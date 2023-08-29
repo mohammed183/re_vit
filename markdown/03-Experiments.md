@@ -42,6 +42,17 @@ To access the dataset, you will need a **Hugging Face** account with an access t
 # Login to hugging face using the token you created
 from huggingface_hub import login
 login()
+
+"""
+If you have Troubles running this cell, you can run this in the terminal
+
+$ pip install huggingface_hub[cli]
+
+$ huggingface-cli login
+
+It will ask for your token, enter it and press enter.
+Once you get login successful you can move on to the next cell.
+"""
 ```
 :::
 
@@ -107,6 +118,8 @@ This experiment is divided into two notebooks, which you can use to evaluate the
 - [ResNet notebook](03.1-ResNet.ipynb): This notebook allows us to evaluate the performance of different **ResNet** models on various image classification datasets. The `model name` can be changed to try different models. The models in this notebook used for this experiment are pretrained on the **ImageNet-21k** dataset and are ready for fine-tuning.
 
 - [ViT notebook](03.2-ViT.ipynb): This notebook allows us to evaluate the performance of different **Vision Transformer (ViT)** models on various image classification datasets. The `model name` can be changed to try different models. The models in this notebook are pretrained on the **ImageNet-21k** dataset and are ready for fine-tuning.
+
+**🛑 If running crashes while GPU is used you will to restart runtime to kill process and empty GPU**
 
 ***
 :::

@@ -6,8 +6,6 @@ In this sequence of notebooks we try to reproduce the results of Dosovitskiy et 
 ***
 :::
 
-<!-- In this sequence of notebooks we try to reproduce the results of Dosovitskiy et al.‘s 2020 paper, “An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale”. <=====> In this sequence of notebooks we try to reproduce the results of [Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S. and Uszkoreit, J., 2020. An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929] -->
-
 ::: {.cell .markdown} 
 # Goals 🎯
 
@@ -68,7 +66,53 @@ The Vision Transformer (ViT) is a novel approach to image classification that us
 
 ::: {.cell .markdown}
 ## Visualization
-<!-- Add the visualization tutorial here -->
+
+In a vision transformer, an image undergoes several preprocessing steps before being passed to the transformer. First, the image is divided into fixed-size patches. These patches are then linearly embedded and combined with positional embeddings. This part explains how image is preprocessed before being passed to transformer encoder and visualize how patches look like and is similar to part of the one found [here](https://github.com/hirotomusiker/schwert_colab_data_storage/blob/master/notebook/Vision_Transformer_Tutorial.ipynb). If you are interested in how positional embeddings are added to the patch embeddings and how attention visualization make sure to check the tutorial link.
+
+![](assets/tutorial.png)
+
+:::
+
+::: {.cell .markdown}
+Suppose we have an image of size `H x W x C`, where `H` and `W` are the height and width of the image, respectively, and `C` is the number of channels. The image is first split into non-overlapping patches of size `P x P`, where `P` is the patch size. This results in a total of `(H x W) / (P x P)` patches, each of size `P x P x C`. Splitting the image into non-overlapping patches of size `P x P` is similar to using a 2D convolutional layer with a kernel size of `P x P` and a stride of `P x P`.
+
+:::
+
+::: {.cell .code}
+```python
+import PIL
+import matplotlib.pyplot as plt
+# upload your image here
+img = PIL.Image.open('image_path')
+# Resize image to 224x224
+img = img.resize((224, 224))
+# Print image before any changes
+plt.imshow(img)
+```
+:::
+
+::: {.cell .code}
+```python
+# The following code shows how each patch should look like
+import numpy as np
+fig = plt.figure(figsize=(8, 8))
+fig.suptitle("Visualization of Patches", fontsize=24)
+img = np.asarray(img)
+for i in range(0, 196):
+    x = i % 14
+    y = i // 14
+    patch = img[y*16:(y+1)*16, x*16:(x+1)*16]
+    ax = fig.add_subplot(14, 14, i+1)
+    ax.axes.get_xaxis().set_visible(False)
+    ax.axes.get_yaxis().set_visible(False)
+    ax.imshow(patch)
+```
+:::
+
+::: {.cell .markdown}
+After all patches have been created, positional embeddings are added to the patch embeddings. The positional embeddings are learnable parameters that encode the spatial position of each patch within the image. This allows the transformer to take into account the spatial relationships between patches when processing the image.
+
+The resulting sequence of patch embeddings, along with an additional learnable class token, is then passed as input to the transformer. The transformer processes this sequence using self-attention and feedforward layers to produce a final representation for the image.
 :::
 
 ::: {.cell .markdown}

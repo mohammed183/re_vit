@@ -28,7 +28,7 @@ To run the notebook, you'll need to install the following dependencies:
 - torch
 - torchvision
 - transformers
-- gdown
+- huggingface_hub
 
 There are three options for installing and running the notebook:
 
