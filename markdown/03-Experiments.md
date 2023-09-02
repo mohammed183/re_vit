@@ -119,7 +119,7 @@ This experiment is divided into two notebooks, which you can use to evaluate the
 
 - [ViT notebook](03.2-ViT.ipynb): This notebook allows us to evaluate the performance of different **Vision Transformer (ViT)** models on various image classification datasets. The `model name` can be changed to try different models. The models in this notebook are pretrained on the **ImageNet-21k** dataset and are ready for fine-tuning.
 
-**🛑 If running crashes while GPU is used you will to restart runtime to kill process and empty GPU**
+**🛑 If running crashes while GPU is used you will to restart runtime to kill process and empty GPU, if you can't find restart the runtime then use the `nvidia-smi` command in the terminal and kill the process**
 
 ***
 :::

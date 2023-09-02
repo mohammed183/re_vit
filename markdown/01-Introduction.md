@@ -67,7 +67,7 @@ The Vision Transformer (ViT) is a novel approach to image classification that us
 ::: {.cell .markdown}
 ## Visualization
 
-In a vision transformer, an image undergoes several preprocessing steps before being passed to the transformer. First, the image is divided into fixed-size patches. These patches are then linearly embedded and combined with positional embeddings. This part explains how image is preprocessed before being passed to transformer encoder and visualize how patches look like and is similar to part of the one found [here](https://github.com/hirotomusiker/schwert_colab_data_storage/blob/master/notebook/Vision_Transformer_Tutorial.ipynb). If you are interested in how positional embeddings are added to the patch embeddings and how attention visualization make sure to check the tutorial link.
+In a vision transformer, an image is preprocessed through several steps before being fed into the transformer encoder. The first step involves dividing the image into fixed-size patches. These patches are then linearly embedded and combined with positional embeddings. This process is visualized below, where you can see how the patches look like. If you are interested in learning more about how positional embeddings are added to the patch embeddings and how attention is visualized, make sure to check out the [full tutorial](https://github.com/hirotomusiker/schwert_colab_data_storage/blob/master/notebook/Vision_Transformer_Tutorial.ipynb).
 
 ![](assets/tutorial.png)
 

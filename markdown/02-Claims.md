@@ -26,7 +26,7 @@ As a result, we may not be able to reproduce all of the results presented in the
 ::: {.cell .markdown}
 ## Primary Claim: Vision Transformer outperforms state of the art CNNs on various classification tasks after pretraining on large datasets
 
-This claim suggests that the vision transformer can leverage more knowledge from large datasets than CNN models during pretraining and transfer this knowledge to the fine tuning task. This implies that the vision transformer can achieve higher or comparable accuracies to the state of the art models on different classification tasks.
+This claim suggests that the vision transformer can leverage more knowledge from large datasets than CNN models during pretraining and transfer this knowledge to the fine-tuning task. This implies that the vision transformer can achieve higher or comparable accuracies to the state of the art models on different classification tasks.
 
 The authors support their claim by pretraining three versions of the vision transformer and evaluating their performance on various benchmarks. However, they use the **JFT-300M** dataset for pretraining, which is a private dataset owned by Google and *not available* to the public. Additionally, the authors do not share the models pre-trained on the **JFT-300M** dataset. The only explicit comparison presented in Table 2 of the paper is between Vision Transformers and CNNs pre-trained on the same private **JFT-300M** dataset. The authors also show results for a Vision Transformer pre-trained on the publicly available **ImageNet-21k** dataset but not compared with a CNN pre-trained on the same dataset. It is worth noting that *BiT-L is a ResNet152x4 model*, which is a type of CNN. The following table shows a subset of the results mentioned above:
 
@@ -128,7 +128,7 @@ One possible solution to evaluate the performance of the Vision Transformer mode
 :::
 
 ::: {.cell .markdown}
-**Based on the information provided, can you explain which parts of the authors’ primary claim can and cannot be evaluated? Additionally, can you describe how we can evaluate the claims that are possible to evaluate? 🤔**
+**Based on the information provided, can you explain which parts of the authors’ primary claim can and cannot be evaluated? Additionally, can you describe how can we evaluate the claims that are possible to evaluate? 🤔**
 
 ***
 :::
